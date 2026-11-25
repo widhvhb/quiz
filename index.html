@@ -261,6 +261,8 @@ textarea#pasteText{min-height:160px;font-size:16px;line-height:1.7}
 .mk-hl-circle{background:#ffeaa0;box-shadow:inset 0 0 0 1.6px #e0675c;border-radius:10px;padding:0 3px}
 .mk-ul-circle{text-decoration:underline;text-decoration-color:#e0675c;text-decoration-thickness:2px;text-underline-offset:3px;box-shadow:inset 0 0 0 1.6px #e0675c;border-radius:10px;padding:0 3px}
 .mk-hl-ul-circle{background:#ffeaa0;text-decoration:underline;text-decoration-color:#e0675c;text-decoration-thickness:2px;text-underline-offset:3px;box-shadow:inset 0 0 0 1.6px #e0675c;border-radius:10px;padding:0 3px}
+.q-img-wrap{position:relative;display:inline-block;max-width:100%}
+.q-img-wrap .x{position:absolute;top:5px;right:5px;width:23px;height:23px;border-radius:50%;background:rgba(200,55,45,.92);color:#fff;font-size:13px;display:grid;place-items:center;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.2)}
 .opt.excl{opacity:.55;border-style:dashed}
 .opt.excl .txt{text-decoration:line-through;text-decoration-color:#9db0c2}
 .opt.excl .key{background:#eef2f7;color:#8fa3b6}
@@ -277,6 +279,16 @@ textarea#pasteText{min-height:160px;font-size:16px;line-height:1.7}
 .bk-t{font-size:12.5px;font-weight:600;color:#3d566f}
 .bk-d{font-size:11.5px;color:var(--muted);line-height:1.6;margin:3px 0 8px}
 .bk-row{display:flex;gap:8px}
+.sec-count{display:inline-flex;align-items:center;gap:3px;border:none;background:none;padding:2px 0;cursor:pointer}
+.sec-count em{font-style:normal;color:var(--accent);font-size:13px}
+.mrow{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 11px;margin-bottom:9px}
+.mrow-t{flex:1;min-width:0;text-align:left;background:none;border:none;padding:0;cursor:pointer}
+.mrow-t b{display:block;font-size:14px;color:var(--ink)}
+.mrow-t span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.mrow-b{display:flex;gap:5px;flex:0 0 auto}
+.mrow-b button{height:26px;padding:0 8px;border-radius:7px;border:1px solid #d8e4f0;background:#f7fbff;color:#4b6a86;font-size:12px;cursor:pointer}
+.mrow-b button:disabled{opacity:.4}
+.mini-add{margin-left:auto;height:27px;padding:0 10px;border-radius:9px;border:1px solid #cfe2f5;background:#f4f9ff;color:var(--accent);font-size:12px;font-weight:500;cursor:pointer}
 .resume-bar{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #bfd6f2;box-shadow:0 2px 8px rgba(47,107,176,.08);border-radius:13px;padding:9px 10px 9px 13px;margin:10px 0 2px}
 .resume-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;background:none;border:none;padding:0;text-align:left;cursor:pointer}
 .resume-t{font-size:13.5px;font-weight:600;color:var(--accent-dark)}
@@ -425,7 +437,7 @@ mark{background:#dbeafc;color:#1c4c86;padding:0 1px;border-radius:2px}
 .img-grid{display:flex;gap:7px;flex-wrap:wrap;margin-top:4px}
 .img-thumb{position:relative;width:66px;height:66px;border-radius:9px;overflow:hidden;border:1px solid var(--line)}
 .img-thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.img-thumb .x{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(15,30,45,.6);color:#fff;font-size:11px;display:grid;place-items:center;cursor:pointer}
+.img-thumb .x{position:absolute;top:0;right:0;width:23px;height:23px;border-radius:0 8px 0 9px;background:rgba(200,55,45,.92);color:#fff;font-size:13px;display:grid;place-items:center;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.18)}
 .img-add{width:66px;height:66px;border-radius:9px;border:1px dashed #c7d8e8;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10.5px;cursor:pointer;background:#fbfdff}
 
 /* ---------- toast ---------- */
@@ -989,6 +1001,7 @@ function render() {
   clearTimeout(S.timer);
   let html = '';
   if (S.view === 'home') html = viewHome();
+  else if (S.view === 'manage') html = viewManage();
   else if (S.view === 'browse') html = viewBrowse();
   else if (S.view === 'course') html = viewCourse();
   else if (S.view === 'chapter') html = viewChapter();
@@ -1007,6 +1020,39 @@ function render() {
     S.lastView = S.view;
     window.scrollTo(0, 0);
   }
+}
+
+/* ---------- 科目管理 ---------- */
+function viewManage() {
+  const p = DB.profile;
+  const list = myCourses();
+  return `
+  <div class="topbar">
+    <button class="icon-btn" data-act="go" data-view="home">←</button>
+    <h2>科目管理</h2>
+  </div>
+  <div class="crumb"><span>${esc(p.major || '未设置专业')}</span><span>›</span><span>${esc(p.grade || '未设置年级')}</span></div>
+  <p class="hint" style="margin:2px 0 14px">上下箭头调首页显示顺序，「置顶」放到最前面。点名字进这门课。</p>
+  ${list.length ? list.map((c, i) => `
+    <div class="mrow">
+      <button class="mrow-t" data-act="openCourse" data-id="${c.id}">
+        <b>${esc(c.name)}</b><span>${c.chapters.length} 章 · ${qCount(c)} 题${wrongCount(c) ? ' · 错题 ' + wrongCount(c) : ''}</span>
+      </button>
+      <div class="mrow-b">
+        <button data-act="courseMove" data-id="${c.id}" data-d="-1" ${i === 0 ? 'disabled' : ''}>↑</button>
+        <button data-act="courseMove" data-id="${c.id}" data-d="1" ${i === list.length - 1 ? 'disabled' : ''}>↓</button>
+        <button data-act="courseTop" data-id="${c.id}">置顶</button>
+      </div>
+    </div>`).join('') : '<div class="empty" style="padding:26px 12px"><p>这个年级下还没有科目</p></div>'}
+  <div class="bk-box" style="margin-top:14px">
+    <div class="bk-t">一次加多门课</div>
+    <div class="bk-d">一行一个科目名，比如：生理学 / 病理学 / 药理学</div>
+    <textarea class="input" id="bcNames" rows="3" placeholder="生理学&#10;病理学&#10;药理学"></textarea>
+    <div class="bk-row" style="margin-top:8px">
+      <button class="btn primary" data-act="addBatchCourses" style="flex:1">批量创建</button>
+      <button class="btn" data-act="newCourse" style="flex:1">单独新建</button>
+    </div>
+  </div>`;
 }
 
 /* ---------- 首页 ---------- */
@@ -1048,7 +1094,7 @@ function viewHome() {
   ${resumeBanner()}
 
   <section class="sec">
-    <div class="sec-head"><h2>今年在学</h2><span class="muted">${list.length} 门 · ${total} 题</span></div>
+    <div class="sec-head"><h2>今年在学</h2><button class="sec-count" data-act="manageCourses"><span class="muted">${list.length} 门 · ${total} 题</span><em>›</em></button><button class="mini-add" data-act="newCourse">＋ 科目</button></div>
     ${list.length ? `<div class="course-list">${list.map(courseCard).join('')}</div>` : `
       <div class="empty" style="padding:30px 14px">
         <div class="ico">${ICON.book}</div>
@@ -1271,7 +1317,7 @@ function viewQDetail() {
     <button class="ask" data-act="askQ" data-qid="${q.id}" title="这道题有问题？点这里反馈">?</button>
   </div>
   <div class="q-stem-detail">${stemHTML(q.q, q.marks)}</div>
-  ${(q.images||[]).length ? `<div class="q-imgs">${(q.images||[]).map(id => IMG[id] ? `<img src="${IMG[id]}" alt="">` : '').join('')}</div>` : ''}
+  ${(q.images||[]).length ? `<div class="q-imgs">${(q.images||[]).map(id => IMG[id] ? `<div class="q-img-wrap"><img src="${IMG[id]}" alt=""><span class="x" data-act="delImage" data-id="${id}" data-qid="${q.id}">✕</span></div>` : '').join('')}</div>` : ''}
   ${q.type !== 'short' ? `<div class="d-opts">${q.options.map(o => `
     <div class="d-opt ${q.answer.indexOf(o.k) > -1 ? 'ans' : ''}"><span class="k">${o.k}</span><span>${esc(o.t)}</span></div>`).join('')}</div>
   <div class="ans-line">正确答案 <b>${esc(answerText(q))}</b></div>` : ''}
@@ -2828,7 +2874,44 @@ document.addEventListener('click', e => {
       break;
     }
 
+    case 'manageCourses': S.view = 'manage'; render(); break;
     case 'newCourse': S.modal = { type: 'newCourse' }; render(); break;
+    case 'courseMove': {
+      const id = el.dataset.id, d = Number(el.dataset.d) || 0;
+      const i = DB.courses.findIndex(c => c.id === id);
+      const j = i + d;
+      if (i < 0 || j < 0 || j >= DB.courses.length) break;
+      const tmp = DB.courses[i]; DB.courses[i] = DB.courses[j]; DB.courses[j] = tmp;
+      saveDB(); render();
+      break;
+    }
+    case 'courseTop': {
+      const id = el.dataset.id;
+      const i = DB.courses.findIndex(c => c.id === id);
+      if (i < 0) break;
+      const c = DB.courses[i];
+      DB.courses.splice(i, 1);
+      const same = DB.courses.findIndex(x => x.major === c.major && x.grade === c.grade);
+      DB.courses.splice(same < 0 ? 0 : same, 0, c);
+      saveDB(); render();
+      toast('已置顶「' + c.name + '」');
+      break;
+    }
+    case 'addBatchCourses': {
+      const ta = $('#bcNames');
+      const names = (ta ? ta.value : '').split(/[\n,，、]/).map(x => x.trim()).filter(Boolean);
+      if (!names.length) { toast('先填科目名，一行一个'); break; }
+      const p = DB.profile;
+      let added = 0;
+      names.forEach(n => {
+        if (myCourses().some(c => c.name === n)) return;
+        DB.courses.push({ id: uid(), name: n, major: p.major, grade: p.grade, chapters: [] });
+        added++;
+      });
+      saveDB(); render();
+      toast(added ? '新建了 ' + added + ' 门课' : '这些科目都已经在列表里了');
+      break;
+    }
     case 'renameCourse': {
       const c = getCourse(el.dataset.id);
       if (c) { S.modal = { type: 'renameCourse', id: c.id, value: c.name }; render(); setTimeout(() => { const i = $('#mcName'); if (i) { i.focus(); i.select(); } }, 60); }
@@ -2899,6 +2982,20 @@ document.addEventListener('click', e => {
     }
     case 'delImage': {
       const m = S.modal;
+      const id0 = el.dataset.id;
+      if (!m && el.dataset.qid) {
+        const f = findQ(el.dataset.qid);
+        if (f) {
+          if (!confirm('删掉这张图片？')) break;
+          f.q.images = (f.q.images || []).filter(x => x !== id0);
+          saveDB();
+          delete IMG[id0];
+          IDB.del(id0);
+          render();
+          toast('图片已删除');
+        }
+        break;
+      }
       if (m && m.type === 'editQ') {
         collectEditor();
         const id = el.dataset.id;
