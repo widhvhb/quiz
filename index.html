@@ -999,6 +999,52 @@ let S = {
   timer: null
 };
 
+/* ================= 访问门禁（一人一码） ================= */
+const GATE_CODES = [
+  { code: '200641', name: '温梦瑶（本人）', on: true, admin: true, start: '', end: '' }
+];
+const ADMIN_PW = '200641';
+function gateDayDiff(a, b) {
+  if (!a || !b) return 0;
+  return Math.round((Date.parse(b + 'T00:00:00') - Date.parse(a + 'T00:00:00')) / 86400000);
+}
+function gateStatus(c) {
+  if (c && c.admin) return { ok: true, label: '管理员', days: -1, note: '不限' };
+  if (!c || c.on === false) return { ok: false, label: '已停用', days: -2, note: '手动停用' };
+  const t = todayStr(), st = c.start || '', en = c.end || '';
+  if (st && t < st) return { ok: false, label: '未开始', days: gateDayDiff(t, st), note: st + ' 开始' };
+  if (en && t > en) return { ok: false, label: '已过期', days: 0, note: en + ' 到期' };
+  if (en) return { ok: true, label: '剩 ' + gateDayDiff(t, en) + ' 天', days: gateDayDiff(t, en), note: '到 ' + en };
+  return { ok: true, label: '长期', days: 99999, note: '不限' };
+}
+function gateSysCode(start) {
+  const d = (start || todayStr()).replace(/-/g, '').slice(4);
+  return d + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+}
+let GATE = { code: '', name: '', at: 0 };
+try { const g = JSON.parse(localStorage.getItem('quiz_gate_v1') || 'null'); if (g && g.code) GATE = g; } catch (e) {}
+function gateStore() {
+  try { return JSON.parse(localStorage.getItem('quiz_gate_codes_v1') || '[]') || []; } catch (e) { return []; }
+}
+function gateSetStore(list) { localStorage.setItem('quiz_gate_codes_v1', JSON.stringify(list)); }
+function gateAllCodes() {
+  const extra = gateStore();
+  const base = GATE_CODES.slice();
+  extra.forEach(x => {
+    const i = base.findIndex(b => b.code.toUpperCase() === x.code.toUpperCase());
+    if (i >= 0) base[i] = x; else base.push(x);
+  });
+  return base;
+}
+function gateOK(code) {
+  const c = gateAllCodes().find(x => x.code.toUpperCase() === String(code || '').trim().toUpperCase());
+  if (!c) return null;
+  const st = gateStatus(c);
+  if (!st.ok) return { __fail: st };
+  return c;
+}
+function gateSave(g) { GATE = g; localStorage.setItem('quiz_gate_v1', JSON.stringify(g)); }
+
 let toastTimer = null;
 function toast(msg) {
   const el = $('#toast');
@@ -1029,8 +1075,11 @@ const ICON = {
 /* ================= 渲染 ================= */
 function render() {
   clearTimeout(S.timer);
+  if (!GATE.code && S.view !== 'gate' && S.view !== 'gateCodes') S.view = 'gate';
   let html = '';
-  if (S.view === 'home') html = viewHome();
+  if (S.view === 'gate') html = viewGate();
+  else if (S.view === 'gateCodes') html = viewGateCodes();
+  else if (S.view === 'home') html = viewHome();
   else if (S.view === 'manage') html = viewManage();
   else if (S.view === 'browse') html = viewBrowse();
   else if (S.view === 'course') html = viewCourse();
@@ -1157,6 +1206,7 @@ function viewHome() {
   </section>` : ''}
 
   ${list.length === 0 && DB.courses.length === 0 ? `<div style="text-align:center;margin-top:26px"><button class="linkbtn" data-act="demo">灌一份示例题库，先看看效果 ›</button></div>` : ''}
+  <div style="text-align:center;margin:24px 0 8px"><button class="linkbtn" data-act="gateAdmin" style="font-size:11px;color:#c2ccd7">码管理</button></div>
   `;
 }
 
@@ -1950,6 +2000,33 @@ function viewModal() {
     body = `<h3>移到哪个文件夹</h3><p class="hint">留空就是“未分组”。</p>
       <div class="field"><label class="field-label">文件夹名</label><input class="input" id="mfoName" value="${esc(f && f.ch.folder ? f.ch.folder : '')}" placeholder="填新名字或留空" /></div>
       <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button><button class="btn primary" data-act="modalOk">移动</button></div>`;
+  } else if (m.type === 'gateNew' || m.type === 'gateEdit') {
+    const isNew = m.type === 'gateNew';
+    const c = isNew ? {} : (gateAllCodes().find(x => x.code.toUpperCase() === String(m.code || '').toUpperCase()) || {});
+    const tab = S.gNewTab === 'self' ? 'self' : 'sys';
+    const t0 = todayStr();
+    const e0 = dstr(Date.parse(t0 + 'T00:00:00') + 30 * 86400000);
+    body = `<h3>${isNew ? '新增使用者' : '修改使用者'}</h3>
+      ${isNew ? `<div class="seg" style="margin-top:10px">
+        <button class="${tab === 'sys' ? 'on' : ''}" data-act="gateNewTab" data-v="sys">系统生成码</button>
+        <button class="${tab === 'self' ? 'on' : ''}" data-act="gateNewTab" data-v="self">自己填码</button>
+      </div>` : ''}
+      <div class="field"><label class="field-label">姓名</label><input class="input" id="gName" value="${esc(c.name || '')}" placeholder="如 张三" /></div>
+      ${(!isNew || tab === 'self') ? `<div class="field"><label class="field-label">${isNew ? '自己定的码' : '码'}</label><input class="input" id="gCode" value="${esc(c.code || '')}" autocapitalize="characters" spellcheck="false" style="font-family:ui-monospace,monospace" /></div>` : `<div class="paper-hint">码按开始日期自动生成，比如 1126-K3P9</div>`}
+      <div class="field" style="display:flex;gap:10px">
+        <div style="flex:1"><label class="field-label">开始日期</label><input class="input" id="gStart" type="date" value="${esc(c.start || t0)}" /></div>
+        <div style="flex:1"><label class="field-label">结束日期</label><input class="input" id="gEnd" type="date" value="${esc(c.end || (isNew ? e0 : ''))}" /></div>
+      </div>
+      <p class="hint" style="margin-top:6px">到结束日期那天还能用，第二天起自动进不去。结束日期留空=不限。</p>
+      <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button><button class="btn primary" data-act="modalOk">${isNew ? '添加' : '保存'}</button></div>`;
+  } else if (m.type === 'gateDel') {
+    const c = gateAllCodes().find(x => x.code.toUpperCase() === String(m.code || '').toUpperCase()) || {};
+    body = `<h3>删除 ${esc(c.name || '这个人')}？</h3><p class="hint">删掉后他的码立刻失效，名字和日期记录也不在了。只是暂时不想让他用，点“停用”就行。</p>
+      <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button><button class="btn primary" data-act="modalOk" style="background:var(--red);border-color:var(--red)">删除</button></div>`;
+  } else if (m.type === 'adminPw') {
+    body = `<h3>管理员验证</h3><p class="hint">只有你能进码管理页。</p>
+      <div class="field"><input class="input" id="gatePw" type="password" placeholder="管理员口令" /></div>
+      <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button><button class="btn primary" data-act="modalOk">进入</button></div>`;
   } else if (m.type === 'coverReset') {
     body = `<h3>全部清零？</h3><p class="hint">这 ${m.n} 道题的对错记录会全部清空，题号盘回到全白，错题本里对应的题也没了。题目和解析不会删。</p>
       <div class="modal-actions"><button class="btn" data-act="modalClose">不是</button><button class="btn primary" data-act="coverResetOk" style="background:var(--red);border-color:var(--red)">是，全部清零</button></div>`;
@@ -2543,6 +2620,86 @@ function coverFiltered() {
   if (C.filter === 'todo') return base.filter(q => (((q.st || {}).right || 0) + ((q.st || {}).wrong || 0)) === 0);
   if (C.filter === 'fav') return base.filter(q => !!q.fav);
   return base.slice();
+}
+
+function viewGate() {
+  return `
+  <div style="padding:56px 6px 0;text-align:center">
+    <div class="hero-mark" style="letter-spacing:.24em;font-size:11px;color:#98adc0">Q U I Z · S T A T I O N</div>
+    <div id="gateTitle" style="font-family:inherit;font-size:30px;font-weight:700;color:#22384d;margin-top:6px;line-height:1.25">刷题小站</div>
+    <div style="font-size:11.5px;color:#98adc0;margin-top:2px">（by 来一块小饼干）</div>
+  </div>
+  <div class="card" style="margin-top:26px;padding:18px 16px">
+    <p style="font-size:13px;color:#5b6b7b;line-height:1.7;margin:0 0 14px">私人题库，输入你的专属码进入。没有码可联系饼干获取。</p>
+    <input class="input" id="gateCode" placeholder="输入专属码" autocomplete="off" autocapitalize="characters" spellcheck="false" style="text-align:center;letter-spacing:.1em;font-size:15px" />
+    <button class="btn primary block" data-act="gateEnter" style="margin-top:12px">进入</button>
+    <div style="font-size:11.5px;color:#98adc0;margin-top:10px;text-align:center">码会记在这台设备上，下次不用再输</div>
+  </div>
+  <div style="text-align:center;margin-top:18px"><button class="linkbtn" data-act="gateAdmin" style="font-size:12px;color:#98adc0">我是管理员</button></div>
+  `;
+}
+
+function gateRowHTML(c) {
+  const st = gateStatus(c);
+  const col = !st.ok ? '#c4553f' : (st.days >= 0 && st.days <= 2 ? '#b8832f' : '#5b6b7b');
+  return `
+  <div style="display:flex;align-items:flex-start;gap:8px;padding:10px 0;border-bottom:1px solid #eff2f6">
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:7px">
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.name || '未命名')}</span>
+        <span style="font-family:ui-monospace,monospace;font-size:12px;font-weight:600;color:#2f6fb2;background:#eef5fd;border-radius:6px;padding:1px 6px">${esc(c.code)}</span>
+        ${c.admin ? '<span style="font-size:10.5px;color:#98adc0">管理员</span>' : ''}
+      </div>
+      <div style="font-size:11.5px;color:${col};margin-top:3px">
+        ${c.admin ? '长期有效 · 不限' : ((c.start ? esc(c.start) : '—') + ' → ' + (c.end ? esc(c.end) : '不限'))}
+      </div>
+    </div>
+    <button class="btn" data-act="gateEditAsk" data-code="${esc(c.code)}" style="padding:4px 10px;font-size:12px">改</button>
+    ${c.admin ? '' : `<button class="btn" data-act="gateToggle" data-code="${esc(c.code)}" style="padding:4px 10px;font-size:12px;color:${c.on === false ? 'var(--blue,#2f6fb2)' : 'var(--red)'}">${c.on === false ? '启用' : '停用'}</button>
+    <button class="btn" data-act="gateDelAsk" data-code="${esc(c.code)}" style="padding:4px 10px;font-size:12px;color:#98adc0">删除</button>`}
+  </div>`;
+}
+
+function gateListHTML() {
+  const q = (S.gateQ || '').trim().toLowerCase();
+  const all = gateAllCodes().filter(c => !q || String(c.name || '').toLowerCase().includes(q) || String(c.code || '').toLowerCase().includes(q));
+  const admin = all.filter(c => c.admin);
+  const rank = st => (st.label === '已过期' ? 1e9 : (st.label === '已停用' ? 1e9 + 1 : st.days));
+  const rest = all.filter(c => !c.admin).map(c => { const st = gateStatus(c); return { c, st, rk: rank(st) }; })
+    .sort((a, b) => a.rk - b.rk || a.c.code.localeCompare(b.c.code));
+  const groups = [];
+  rest.forEach(x => {
+    const key = x.st.label;
+    const g = groups.find(g => g.key === key);
+    if (g) g.items.push(x); else groups.push({ key, days: x.rk, items: [x] });
+  });
+  groups.sort((a, b) => a.days - b.days);
+  let html = '';
+  if (admin.length) html += `<div style="font-size:11px;color:#98adc0;margin:2px 0 2px">管理员</div>${admin.map(c => gateRowHTML(c)).join('')}`;
+  if (groups.length) {
+    html += groups.map(g => `<div style="font-size:11px;color:#98adc0;margin:14px 0 2px">${esc(g.key)}（${g.items.length} 人）</div>${g.items.map(x => gateRowHTML(x.c)).join('')}`).join('');
+  }
+  if (!html) html = '<div class="paper-hint">没有找到这个名字</div>';
+  return html;
+}
+
+function viewGateCodes() {
+  const all = gateAllCodes();
+  const expired = all.filter(c => !c.admin && !gateStatus(c).ok).length;
+  return `
+  <div class="topbar">
+    <button class="icon-btn" data-act="gateBack">←</button>
+    <h2>码管理</h2>
+  </div>
+  <p class="muted" style="margin:-6px 0 10px;font-size:12px">一个人一个码，到期自动停用。${expired ? '<span style="color:#c4553f">现在有 ' + expired + ' 人不能进</span>' : '目前都还能进'}。</p>
+  <input class="input" id="gateSearch" value="${esc(S.gateQ || '')}" placeholder="搜名字或码" style="margin-bottom:12px" />
+  <div class="card" style="padding:6px 14px 10px" id="gateList">${gateListHTML()}</div>
+  <button class="btn primary block" data-act="gateNewAsk" style="margin-top:14px">＋ 新增使用者</button>
+  <div class="modal-actions" style="margin-top:16px">
+    <button class="btn" data-act="gateLogout" style="flex:1;color:var(--red);border-color:#eccfca">退出这台设备</button>
+  </div>
+  <div class="paper-hint" style="margin-top:14px">这里改的名单只在你手机上生效。要让别人的页面也认这些码，把名单发给我更新上线。</div>
+  `;
 }
 
 function viewCover() {
@@ -3496,6 +3653,68 @@ document.addEventListener('click', e => {
     case 'coverFilter': { S.cover.filter = el.dataset.f; render(); break; }
     case 'coverOrder': { S.cover.order = el.dataset.v === 'random' ? 'random' : 'seq'; render(); break; }
     case 'coverStart': startFromCover(-1); break;
+    case 'gateEnter': {
+      const inp = $('#gateCode');
+      const r = gateOK(inp ? inp.value : '');
+      if (!r) { toast('码不对，检查一下或联系饼干'); break; }
+      if (r.__fail) { toast(r.__fail.label === '已过期' ? '这个码已到期，想续请联系饼干' : (r.__fail.label === '未开始' ? '这个码还没到开始日期' : '这个码已停用，请联系饼干')); break; }
+      const c = r;
+      gateSave({ code: c.code, name: c.name || '', at: Date.now() });
+      S.view = 'home'; S.modal = null; render();
+      toast('欢迎，' + (c.name || '同学'));
+      setTimeout(() => { if (S.view === 'home' && !S.modal && (!DB.profile.major || !DB.profile.grade)) { S.modal = { type: 'profile' }; render(); } }, 2600);
+      break;
+    }
+    case 'gateAdmin': S.modal = { type: 'adminPw' }; render(); break;
+    case 'gateBack': S.view = GATE.code ? 'home' : 'gate'; S.modal = null; render(); break;
+    case 'gateToggle': {
+      const code = el.dataset.code;
+      const all = gateAllCodes();
+      const cur = all.find(x => x.code.toUpperCase() === code.toUpperCase());
+      if (!cur) break;
+      const list = gateStore();
+      const i = list.findIndex(x => x.code.toUpperCase() === code.toUpperCase());
+      const nv = { code: cur.code, name: cur.name || '', start: cur.start || '', end: cur.end || '', on: cur.on === false, admin: false };
+      if (i >= 0) list[i] = nv; else list.push(nv);
+      gateSetStore(list);
+      render(); toast(((cur.on === false) ? '已启用 ' : '已停用 ') + (cur.name || code));
+      break;
+    }
+    case 'gateNewAsk': S.gNewTab = 'sys'; S.modal = { type: 'gateNew' }; render(); break;
+    case 'gateNewTab': S.gNewTab = el.dataset.v === 'self' ? 'self' : 'sys'; render(); break;
+    case 'gateEditAsk': S.modal = { type: 'gateEdit', code: el.dataset.code }; render(); break;
+    case 'gateDelAsk': S.modal = { type: 'gateDel', code: el.dataset.code }; render(); break;
+    case '__gateGenDisabled': {
+      const names = (($('#gateNames') || {}).value || '').split(/\n/).map(x => x.trim()).filter(Boolean);
+      if (!names.length) { toast('先写上名字'); break; }
+      const list = gateStore();
+      const made = [];
+      names.forEach((nm, i) => {
+        const code = 'QM-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+        list.push({ code, name: nm, on: true });
+        made.push(code + '  ' + nm);
+      });
+      gateSetStore(list);
+      S.gateOut = made.join('\n');
+      render(); toast('已生成 ' + made.length + ' 个码（记得发布）');
+      break;
+    }
+    case '__gateCopyDisabled': {
+      const t = S.gateOut || '';
+      try {
+        if (navigator.clipboard) navigator.clipboard.writeText(t);
+        toast('已复制，发给对应的人就行');
+      } catch (e) { toast('长按上面那段文字复制'); }
+      break;
+    }
+    case 'gateLogout': {
+      localStorage.removeItem('quiz_gate_v1');
+      GATE = { code: '', name: '', at: 0 };
+      if (S.covers) S.covers = null;
+      S.view = 'gate'; S.modal = null; render();
+      toast('已退出这台设备');
+      break;
+    }
     case 'coverReset': {
       const C = S.cover;
       if (!C) break;
@@ -3777,6 +3996,44 @@ function modalOk() {
     if (c.folders.includes(v) || c.chapters.some(ch => ch.folder === v)) { toast('已经有同名文件夹'); return; }
     c.folders.push(v); saveDB();
     S.modal = null; render(); toast('已新建文件夹「' + v + '」');
+  } else if (m.type === 'gateDel') {
+    const code0 = String(m.code || '').toUpperCase();
+    if (GATE_CODES.some(x => x.code.toUpperCase() === code0)) { toast('管理员自己的码不能删'); S.modal = null; render(); }
+    else { gateSetStore(gateStore().filter(x => x.code.toUpperCase() !== code0)); S.modal = null; render(); toast('已删除'); }
+  } else if (m.type === 'gateNew' || m.type === 'gateEdit') {
+    const name = (($('#gName') || {}).value || '').trim();
+    const start = (($('#gStart') || {}).value || '').trim();
+    const end = (($('#gEnd') || {}).value || '').trim();
+    if (!name) { toast('写上姓名'); return; }
+    if (start && end && end < start) { toast('结束日期早于开始日期'); return; }
+    const list = gateStore();
+    if (m.type === 'gateEdit') {
+      const code0 = String(m.code || '').toUpperCase();
+      const i = list.findIndex(x => x.code.toUpperCase() === code0);
+      const cur = gateAllCodes().find(x => x.code.toUpperCase() === code0) || {};
+      let nv = { code: (($('#gCode') || {}).value || cur.code || '').trim().toUpperCase(), name, start, end, on: cur.on !== false, admin: false };
+      if (!nv.code) { toast('码不能空'); return; }
+      const dup = gateAllCodes().some(x => x.code.toUpperCase() === nv.code && x.code.toUpperCase() !== code0);
+      if (dup) { toast('这个码已经有人用了'); return; }
+      if (i >= 0) list[i] = nv; else list.push(nv);
+      gateSetStore(list);
+      S.modal = null; render(); toast('已保存 ' + name);
+      return;
+    }
+    const tab = S.gNewTab === 'self' ? 'self' : 'sys';
+    let code = (($('#gCode') || {}).value || '').trim().toUpperCase();
+    if (tab === 'self' && !code) { toast('写上自己定的码'); return; }
+    if (!code) code = gateSysCode(start);
+    if (gateAllCodes().some(x => x.code.toUpperCase() === code)) { toast('这个码已经有人用了'); return; }
+    list.push({ code, name, start, end, on: true, admin: false });
+    gateSetStore(list);
+    S.modal = null; render();
+    toast('已添加 ' + name + '：' + code);
+    S.holdAt = 0;
+  } else if (m.type === 'adminPw') {
+    const v = (($('#gatePw') || {}).value || '').trim();
+    if (v === ADMIN_PW) { S.modal = null; S.view = 'gateCodes'; S.gateOut = ''; render(); toast('管理员已进入'); }
+    else { toast('口令不对'); }
   } else if (m.type === 'renamePaper') {
     const v = ($('#mprName') || {}).value.trim();
     const pr = (DB.papers || []).find(x => x.id === m.id);
@@ -4334,12 +4591,36 @@ function demo() {
   toast('示例已导入：生理学 · 2 章 5 题');
 }
 
+/* 码管理：搜索框输入时只刷新列表，不整页重绘 */
+document.addEventListener('input', e => {
+  if (!e.target || e.target.id !== 'gateSearch') return;
+  S.gateQ = e.target.value;
+  const box = document.getElementById('gateList');
+  if (box) box.innerHTML = gateListHTML();
+});
+
+/* 门禁：输入框回车直接进 */
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const t = e.target;
+  if (t && t.id === 'gateCode') { e.preventDefault(); const b = document.querySelector('[data-act=gateEnter]'); if (b) b.click(); }
+  if (t && t.id === 'gatePw') { e.preventDefault(); const b = document.querySelector('[data-act=modalOk]'); if (b) b.click(); }
+});
+
 /* 启动 */
 (async () => {
   await IDB.init();
   await IDB.loadAll();
+  if (GATE.code) {
+    const r = gateOK(GATE.code);
+    if (!r || r.__fail) {
+      localStorage.removeItem('quiz_gate_v1');
+      GATE = { code: '', name: '', at: 0 };
+      setTimeout(() => toast('这个码已到期或已停用，请联系饼干'), 400);
+    }
+  }
   render();
-  if (!DB.profile.major || !DB.profile.grade) {
+  if (GATE.code && (!DB.profile.major || !DB.profile.grade)) {
     S.modal = { type: 'profile' };
     render();
   }
