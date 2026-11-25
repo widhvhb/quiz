@@ -111,6 +111,15 @@ textarea.input{resize:vertical}
 .quick svg{color:var(--accent)}
 .tag.fav{background:#fdf3e2;color:#a9762a;border:1px solid #eed9b6}
 .qitem,.sr-item,.q-main{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.p-stem,.exp,.short-box{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+.mark-bar,.ask,.p-nav,.opts button{-webkit-user-select:none;user-select:none}
+/* 草稿层 */
+.draft-layer{position:absolute;inset:0;z-index:20;background:rgba(255,255,255,.01);border-radius:14px;display:flex;flex-direction:column}
+.draft-layer .draft-bar{position:absolute;left:8px;right:8px;bottom:8px;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:7px 9px;box-shadow:0 2px 10px rgba(24,42,58,.12);font-size:11.5px;color:var(--muted);z-index:2}
+.draft-layer .draft-bar span{flex:1}
+.draft-layer .draft-bar button{border:1px solid var(--line);background:#fff;border-radius:9px;padding:6px 10px;font-size:12px;color:#3f566b}
+.draft-layer .draft-bar button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+#draftCv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;z-index:1}
 .log-row{display:flex;gap:11px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:11px 14px;margin-bottom:8px;font-size:13px;cursor:pointer;text-align:left;width:100%}
 .log-row .lr-main{flex:1;min-width:0}
 .log-row .lr-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
@@ -235,7 +244,7 @@ textarea#pasteText{min-height:160px;font-size:16px;line-height:1.7}
 .paper-hint{font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.6}
 .bar{height:4px;border-radius:3px;background:#e5edf6;overflow:hidden;margin-bottom:18px}
 .bar i{display:block;height:100%;background:linear-gradient(90deg,#4d86c4,#2f6bb0);border-radius:3px;transition:width .3s ease}
-.q-main{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px 17px;box-shadow:var(--shadow)}
+.q-main{position:relative;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px 17px;box-shadow:var(--shadow)}
 .q-type-row{display:flex;align-items:center;gap:7px;margin-bottom:11px}
 .q-type-row .idx{font-size:11.5px;color:var(--muted);margin-left:auto}
 .ask{flex:none;width:24px;height:24px;border-radius:50%;border:1px solid #c3d6e6;background:#fff;color:var(--accent);font-size:13px;font-weight:600;line-height:1;display:grid;place-items:center;cursor:pointer;padding:0;margin-left:6px}
@@ -275,6 +284,12 @@ textarea#pasteText{min-height:160px;font-size:16px;line-height:1.7}
 .hl-y{background:#ffe9a6;border-radius:3px;box-decoration-break:clone;padding:0 1px}
 .hl-r{background:#ffd4cf;border-radius:3px;box-decoration-break:clone;padding:0 1px}
 .hl-b{background:#cfe4ff;border-radius:3px;box-decoration-break:clone;padding:0 1px}
+.hl-ul{text-decoration:underline;text-decoration-color:#3f7fbf;text-decoration-thickness:1.5px;text-underline-offset:2.5px}
+.hl-wavy{text-decoration:underline;text-decoration-style:wavy;text-decoration-color:#d9614f;text-decoration-thickness:1.5px;text-underline-offset:2.5px}
+.hl-circle{border:1.6px solid #6fae90;border-radius:7px;box-decoration-break:clone;padding:0 1.5px}
+.hlbtn.ul i{background:#fff;border-bottom:1.6px solid #3f7fbf;border-radius:0}
+.hlbtn.wavy i{background:#fff;border-bottom:1.6px dashed #d9614f;border-radius:0}
+.hlbtn.circle i{background:#fff;border:1.6px solid #6fae90;border-radius:50%}
 .bk-box{margin:6px 0 12px;padding:11px 12px;background:#f5f9ff;border:1px solid #dce8f6;border-radius:12px}
 .bk-t{font-size:12.5px;font-weight:600;color:#3d566f}
 .bk-d{font-size:11.5px;color:var(--muted);line-height:1.6;margin:3px 0 8px}
@@ -294,6 +309,7 @@ textarea#pasteText{min-height:160px;font-size:16px;line-height:1.7}
 .resume-t{font-size:13.5px;font-weight:600;color:var(--accent-dark)}
 .resume-s{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .resume-x{width:24px;height:24px;border-radius:50%;border:none;background:#eef4fb;color:#7b8fa3;font-size:14px;line-height:1;cursor:pointer;flex:0 0 auto}
+.qn-sub{font-size:8.5px;color:#8a9aab;margin-top:1px;letter-spacing:0}
 .hl-preview{white-space:pre-wrap;font-size:13.5px;line-height:1.75;color:#3f566b;background:#fbfdff;border:1px dashed #dbe6f1;border-radius:10px;padding:10px 11px;margin-top:8px;max-height:26vh;overflow:auto;-webkit-user-select:text;user-select:text}
 .hl-tools{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:9px}
 .hl-tools .t{font-size:11.5px;color:var(--muted);margin-right:2px}
@@ -303,10 +319,14 @@ textarea#pasteText{min-height:160px;font-size:16px;line-height:1.7}
 .hlbtn.r i{background:#ffd4cf}
 .hlbtn.b i{background:#cfe4ff}
 .hlbtn.clear{color:var(--muted)}
+.undo-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:11px}
+.undo-row .muted{flex:1;min-width:120px;line-height:1.5}
+.undo-row button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 9px;font-size:11.5px;color:#5b6f80}
 .issue-panel{background:#fdf8ee;border:1px solid #eddcc0;border-radius:11px;padding:10px 12px;font-size:12.5px;color:#8a6a2b;line-height:1.65;margin-top:12px}
 .issue-panel .lbl{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:11px;color:#a9762a;margin-bottom:5px}
 .issue-panel button{background:none;border:0;color:var(--accent-dark);font-size:11.5px;text-decoration:underline;cursor:pointer;padding:0}
 .qi-note{font-size:11.5px;color:#a9762a;background:#fdf8ee;border-radius:7px;padding:5px 8px;margin-top:7px;line-height:1.5}
+.q-hist{font-size:11.5px;color:#8fa3b6;margin:8px 0 2px;letter-spacing:.2px}
 .p-stem{font-family:"Noto Serif SC",serif;font-size:17px;line-height:1.75;font-weight:600;white-space:pre-wrap;word-break:break-word}
 .opts{margin-top:18px}
 .opt{display:flex;gap:11px;width:100%;align-items:flex-start;text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;line-height:1.55;transition:border-color .15s,background .15s}
@@ -336,7 +356,11 @@ textarea#pasteText{min-height:160px;font-size:16px;line-height:1.7}
 .ra-short{white-space:pre-wrap;font-size:14px;line-height:1.72;color:#3f566b;margin-top:7px}
 .recite-ans .exp{margin-top:9px}
 .qn-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:9px;margin-top:14px}
-.qn{aspect-ratio:1;border-radius:50%;border:1px solid var(--line);background:#fff;display:grid;place-items:center;font-size:12px;color:#93a4b4;font-variant-numeric:tabular-nums;cursor:pointer;padding:0;transition:transform .12s}
+.qn{aspect-ratio:1;border-radius:50%;border:1px solid var(--line);background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:12px;color:#93a4b4;font-variant-numeric:tabular-nums;cursor:pointer;padding:0;transition:transform .12s;overflow:hidden}
+.qn-n{font-size:12.5px;line-height:1;font-weight:600}
+.qn-sub{font-size:8.5px;line-height:1;color:#9aa9b7;letter-spacing:0;white-space:nowrap}
+.qn.ok .qn-sub{color:#3d7f63}
+.qn.no .qn-sub{color:#b5655d}
 .qn:active{transform:scale(.94)}
 .qn.ok{background:var(--green-soft);border-color:#9cc9b4;color:#256b52;font-weight:600}
 .qn.no{background:var(--red-soft);border-color:#e2b0ab;color:#a3423a;font-weight:600}
@@ -498,20 +522,23 @@ function expHTML(text, hl) {
   if (!hl || !hl.length) return esc(t);
   const n = t.length;
   const col = new Array(n).fill('');
-  hl.forEach(h => {
+  const own = new Array(n).fill(-1);
+  hl.forEach((h, i) => {
     const a = Math.max(0, Math.min(Number(h.s) || 0, n));
     const b = Math.max(0, Math.min(Number(h.e) || 0, n));
-    for (let i = a; i < b; i++) col[i] = h.c;
+    for (let k = a; k < b; k++) { col[k] = h.c; own[k] = i; }
   });
-  let out = '', buf = '', cur = '';
+  let out = '', buf = '', cur = '', curOwn = -1;
+  const flush = () => {
+    if (!buf) return;
+    out += cur ? `<span class="hl hl-${cur}" data-act="hlRemove" data-hl="${curOwn}" title="点一下去掉这句标记">${esc(buf)}</span>` : esc(buf);
+    buf = '';
+  };
   for (let i = 0; i < n; i++) {
-    if (col[i] !== cur) {
-      if (buf) out += cur ? `<span class="hl hl-${cur}">${esc(buf)}</span>` : esc(buf);
-      buf = ''; cur = col[i];
-    }
+    if (col[i] !== cur || own[i] !== curOwn) { flush(); cur = col[i]; curOwn = own[i]; }
     buf += t[i];
   }
-  if (buf) out += cur ? `<span class="hl hl-${cur}">${esc(buf)}</span>` : esc(buf);
+  flush();
   return out;
 }
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -963,6 +990,7 @@ let S = {
   recite: null,
   cover: null,
   favAt: 0,
+  draftQ: null,
   imgTarget: null,
   randomPref: false,
   lastView: null,
@@ -1016,6 +1044,7 @@ function render() {
   else if (S.view === 'recite') html = viewRecite();
   else if (S.view === 'cover') html = viewCover();
   $('#app').innerHTML = html + (S.modal ? viewModal() : '') + '<div id="toast" class="toast"></div>';
+  if (S.draftQ) mountDraft();
   if (S.lastView !== S.view) {
     S.lastView = S.view;
     window.scrollTo(0, 0);
@@ -1197,7 +1226,7 @@ function viewCourse() {
     <h2>${esc(c.name)}</h2>
   </div>
   <div class="crumb"><span>${esc(c.major)}</span><span>·</span><span>${esc(c.grade)}</span></div>
-  <div class="stat-line"><span>${c.chapters.length} 章</span><span>${qCount(c)} 题</span><span>客观 ${objCount(c)}</span><span>主观 ${subCount(c)}</span><span style="color:#98adc0">左滑删除 · 长按收藏</span></div>
+  <div class="stat-line"><span>${c.chapters.length} 章</span><span>${qCount(c)} 题</span><span>客观 ${objCount(c)}</span><span>主观 ${subCount(c)}</span><span style="color:#98adc0">长按可编辑</span></div>
 
   <div class="actions">
     <button class="btn primary" data-act="practiceSheet" data-course="${c.id}">开始练习</button>
@@ -1232,9 +1261,9 @@ function chapterRow(c, ch, i) {
 }
 
 function folderNames(c) {
-  const set = new Set((c.folders || []).filter(Boolean));
-  c.chapters.forEach(ch => { if (ch.folder) set.add(ch.folder); });
-  return Array.from(set);
+  const arr = (c.folders || []).filter(Boolean).slice();
+  c.chapters.forEach(ch => { if (ch.folder && arr.indexOf(ch.folder) < 0) arr.push(ch.folder); });
+  return arr;
 }
 function chapterBlocks(c) {
   const names = folderNames(c);
@@ -1264,7 +1293,7 @@ function viewChapter() {
     <h2>${esc(ch.name)}</h2>
   </div>
   <div class="crumb"><span>${esc(c.name)}</span>${ch.folder ? `<span>›</span><span>${esc(ch.folder)}</span>` : ''}<span>›</span><span>${esc(ch.name)}</span></div>
-  <div class="stat-line"><span>${all.length} 题</span><span>客观 ${ob}</span><span>主观 ${all.length - ob}</span><span>错题 ${wrongN}</span><span style="color:#98adc0">左滑删除 · 长按收藏</span></div>
+  <div class="stat-line"><span>${all.length} 题</span><span>客观 ${ob}</span><span>主观 ${all.length - ob}</span><span>错题 ${wrongN}</span><span style="color:#98adc0">左滑删除 · 长按菜单</span></div>
 
   <div class="actions">
     <button class="btn primary" data-act="practiceSheet" data-chapter="${ch.id}">开始练习</button>
@@ -1313,7 +1342,7 @@ function viewQDetail() {
   const st = q.st || { right: 0, wrong: 0 };
   return `
   <div class="topbar">
-    <button class="icon-btn" data-act="openChapter" data-id="${ch.id}">←</button>
+    <button class="icon-btn" data-act="qBack">←</button>
     <h2>题目</h2>
     <button class="btn small" data-act="editQ" data-qid="${q.id}">编辑</button>
   </div>
@@ -1546,13 +1575,16 @@ function viewPractice() {
       <span class="tag ${qClass(q)}">${qLabel(q)}</span>
       ${q.type === 'multi' ? '<span class="tag ghost">可以多选</span>' : ''}
       <span class="idx">第 ${P.idx + 1} 题</span>
+      <button class="ask ${S.draftQ === q.id ? 'on' : ''}" data-act="draftToggle" data-qid="${q.id}" title="草稿（在题上写字）">✎</button>
       <button class="ask ${q.fav ? 'on' : ''}" data-act="favQ" data-qid="${q.id}" title="${q.fav ? '取消收藏' : '收藏这道题'}">${q.fav ? '★' : '☆'}</button>
       <button class="ask" data-act="askQ" data-qid="${q.id}" title="这道题有问题？点这里反馈">?</button>
     </div>
+    ${(q.st.right || 0) + (q.st.wrong || 0) ? `<div class="q-hist">本题做过 ${(q.st.right || 0) + (q.st.wrong || 0)} 次 · 对 ${q.st.right || 0} · 错 ${q.st.wrong || 0} · 正确率 ${Math.round((q.st.right || 0) / ((q.st.right || 0) + (q.st.wrong || 0)) * 100)}%</div>` : ''}
     <div class="p-stem" data-stemq="${q.id}">${stemHTML(q.q, q.marks)}</div>
     ${(q.images||[]).length ? `<div class="q-imgs">${(q.images||[]).map(id => IMG[id] ? `<img src="${IMG[id]}" alt="">` : '').join('')}</div>` : ''}
     ${renderAnswerArea(q, P)}
     ${renderFeedback(q, P)}
+    ${S.draftQ === q.id ? `<div class="draft-layer" data-draft="${q.id}"><div class="draft-bar"><span>草稿 · 直接用手指写</span><button data-act="draftClear">清除</button><button class="primary" data-act="draftClose">完成</button></div><canvas id="draftCv"></canvas></div>` : ''}
   </div>
   ${practiceFoot(q, P)}
   `;
@@ -1602,7 +1634,9 @@ function renderFeedback(q, P) {
   const expHead = `<div class="exp-head"><span class="exp-label">解析</span><button class="exp-edit" data-act="editExp" data-qid="${q.id}">改解析 / 标重点</button></div>`;
   if (!q.answer) return `<div class="fb note">这道题还没有设置答案，看完解析继续。</div>${q.exp ? `<div class="exp">${expHead}${expHTML(q.exp, q.hl)}</div>` : `<div class="exp">${expHead}这道题还没有解析。</div>`}`;
   if (P.picked === null && !P.submitted) return '';
-  if (P.correct === true) return '<div class="fb ok">✓ 回答正确，继续下一题</div>';
+  if (P.correct === true) {
+    return `<div class="fb ok">✓ 回答正确<div class="fb-row">你选了 <b>${esc(P.picked || '')}</b></div></div>${q.exp ? `<div class="exp">${expHead}${expHTML(q.exp, q.hl)}</div>` : ''}`;
+  }
   return `<div class="fb bad">
     <div class="fb-title">✕ 回答错误</div>
     <div class="fb-row">正确答案 <b>${esc(answerText(q))}</b>${P.picked ? ` · 你选了 <b>${esc(P.picked)}</b>` : ''}</div>
@@ -1892,6 +1926,7 @@ function viewModal() {
   } else if (m.type === 'foldermenu') {
     body = `<h3>📁 ${m.name ? esc(m.name) : '未分组'}</h3><p class="hint">${m.name ? '长按文件夹可以改名或删掉这个文件夹。' : '导入时没填文件夹的章节会落到这里。'}</p>
       ${m.name ? `<div class="btn" data-act="newChapterInFolder" data-course="${m.course}" data-folder="${esc(m.name)}" style="width:100%;margin-bottom:8px;text-align:center;padding:12px;cursor:pointer">＋ 在这个文件夹新建章节</div>
+      <div class="bk-row" style="margin-bottom:8px"><button class="btn" data-act="folderUp" data-course="${m.course}" data-name="${esc(m.name)}" style="flex:1">↑ 上移</button><button class="btn" data-act="folderDown" data-course="${m.course}" data-name="${esc(m.name)}" style="flex:1">↓ 下移</button></div>
       <div class="bk-row"><button class="btn" data-act="renameFolderAsk" data-course="${m.course}" data-name="${esc(m.name)}" style="flex:1">重命名</button>
       <button class="btn" data-act="delFolder" data-course="${m.course}" data-name="${esc(m.name)}" style="flex:1;color:var(--red);border-color:#eccfca">删除文件夹</button></div>` : '<p class="hint">未分组里的章节，长按单章就能移走或删掉。</p>'}
       <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button></div>`;
@@ -1900,8 +1935,10 @@ function viewModal() {
     const n = f ? f.ch.questions.length : 0;
     body = `<h3>${f ? esc(f.ch.name) : '章节'}</h3><p class="hint">${f ? (f.ch.folder ? '📁 ' + esc(f.ch.folder) + ' · ' : '') + n + ' 题' : ''}</p>
       <div style="margin:12px 0">
+        <div class="bk-row" style="margin-bottom:8px"><button class="btn" data-act="chUp" data-id="${m.id}" style="flex:1">↑ 上移</button><button class="btn" data-act="chDown" data-id="${m.id}" style="flex:1">↓ 下移</button></div>
         <button class="btn" data-act="moveChAsk" data-id="${m.id}" style="width:100%;margin-bottom:8px">移动到其他文件夹</button>
         <button class="btn" data-act="renameChapter" data-id="${m.id}" style="width:100%;margin-bottom:8px">重命名章节</button>
+        <button class="btn" data-act="exportChapter" data-id="${m.id}" style="width:100%;margin-bottom:8px">导出这个章节（txt）</button>
         <button class="btn" data-act="delChapter" data-id="${m.id}" style="width:100%;color:var(--red);border-color:#eccfca">删除这个章节${n ? '（' + n + ' 题一起删）' : ''}</button>
       </div>
       <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button></div>`;
@@ -1921,16 +1958,20 @@ function viewModal() {
       <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button><button class="btn primary" data-act="modalOk" style="background:var(--red);border-color:var(--red)">删除</button></div>`;
   } else if (m.type === 'editExp') {
     const q = m.q || {};
-    body = `<h3>修改${q.type === 'short' ? '参考答案' : '解析'}</h3><p class="hint">可以改文字，也可以选中下面的预览里的文字加黄/红/蓝高光。</p>
+    body = `<h3>修改${q.type === 'short' ? '参考答案' : '解析'}</h3><p class="hint">可以改文字，选中预览里的文字加标记（底色 / 横线 / 波浪 / 圈）。</p>
       <div class="field"><textarea class="input" id="mExp" rows="5">${esc(q.exp)}</textarea>
         <div class="hl-tools">
           <span class="t">选中下面文字，点颜色标重点</span>
           <button type="button" class="hlbtn y" data-act="hlColor" data-c="y"><i></i>黄</button>
           <button type="button" class="hlbtn r" data-act="hlColor" data-c="r"><i></i>红</button>
           <button type="button" class="hlbtn b" data-act="hlColor" data-c="b"><i></i>蓝</button>
-          <button type="button" class="hlbtn clear" data-act="hlClear">清除高光</button>
+          <button type="button" class="hlbtn ul" data-act="hlColor" data-c="ul"><i></i>横线</button>
+          <button type="button" class="hlbtn wavy" data-act="hlColor" data-c="wavy"><i></i>波浪</button>
+          <button type="button" class="hlbtn circle" data-act="hlColor" data-c="circle"><i></i>圈圈</button>
+          <button type="button" class="hlbtn clear" data-act="hlClear">清除标记</button>
         </div>
         <div class="hl-preview" id="hlPreview">${q.exp ? expHTML(q.exp, q.hl) : '<span class="muted">（还空着）</span>'}</div>
+        <div class="undo-row"><span class="muted">点已标文字可去掉那一段</span><button data-act="hlUndo">撤销一步</button><button data-act="hlReset">还原成修改前</button></div>
       </div>
       <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button><button class="btn primary" data-act="modalOk">保存</button></div>`;
   } else if (m.type === 'issue') {
@@ -2034,9 +2075,13 @@ function viewModal() {
           <button type="button" class="hlbtn y" data-act="hlColor" data-c="y"><i></i>黄</button>
           <button type="button" class="hlbtn r" data-act="hlColor" data-c="r"><i></i>红</button>
           <button type="button" class="hlbtn b" data-act="hlColor" data-c="b"><i></i>蓝</button>
-          <button type="button" class="hlbtn clear" data-act="hlClear">清除高光</button>
+          <button type="button" class="hlbtn ul" data-act="hlColor" data-c="ul"><i></i>横线</button>
+          <button type="button" class="hlbtn wavy" data-act="hlColor" data-c="wavy"><i></i>波浪</button>
+          <button type="button" class="hlbtn circle" data-act="hlColor" data-c="circle"><i></i>圈圈</button>
+          <button type="button" class="hlbtn clear" data-act="hlClear">清除标记</button>
         </div>
         <div class="hl-preview" id="hlPreview">${q.exp ? expHTML(q.exp, q.hl) : '<span class="muted">（解析还空着）</span>'}</div>
+        <div class="undo-row"><span class="muted">点已标文字可去掉那一段</span><button data-act="hlUndo">撤销一步</button><button data-act="hlReset">还原成修改前</button></div>
       </div>
       <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button><button class="btn primary" data-act="modalOk">保存</button></div>`;
   }
@@ -2179,6 +2224,28 @@ function startPractice(list, opts) {
 
 function curQ() { return S.practice ? S.practice.list[S.practice.idx] : null; }
 
+/* 回到做过的题：把当时选的答案、解析、统计都还原 */
+function resetPState(P) {
+  P.picked = null; P.multiSel = []; P.submitted = false; P.revealed = false; P.judged = null; P.correct = null; P.excl = {};
+}
+function loadAnswerState(P) {
+  resetPState(P);
+  if (!P) return;
+  const rec = (P.answers || []).filter(a => a.qi === P.idx).pop();
+  if (!rec) return;
+  const q = P.list[P.idx];
+  if (!q) return;
+  if (q.type === 'short') {
+    if (rec.picked === '自评') { P.judged = rec.correct; P.correct = rec.correct; }
+    P.revealed = true;
+    return;
+  }
+  if (q.type === 'multi') { P.picked = rec.picked; P.multiSel = String(rec.picked || '').split('').filter(Boolean); P.submitted = true; }
+  else { P.picked = rec.picked; }
+  P.correct = rec.correct;
+  P.revealed = true;
+}
+
 function recordAnswer(correct, picked) {
   const P = S.practice, q = curQ();
   P.answers.push({ qi: P.idx, qid: q.id, correct, picked: picked || '' });
@@ -2247,7 +2314,7 @@ function advance() {
   if (P.idx + 1 >= P.list.length) finish();
   else {
     P.idx++;
-    P.picked = null; P.multiSel = []; P.submitted = false; P.revealed = false; P.judged = null; P.correct = null;
+    loadAnswerState(P);
     saveSession();
     render();
   }
@@ -2487,10 +2554,15 @@ function viewCover() {
 
   ${list.length ? `<div class="qn-grid">${list.map((q, i) => {
     const w = (q.st || {}).wrong || 0, r = (q.st || {}).right || 0;
-    const cls = w > 0 ? 'no' : (r > 0 ? 'ok' : '');
-    return `<button class="qn ${cls}" data-act="coverJump" data-i="${i}">${i + 1}</button>`;
+    const cls = r >= 3 ? 'ok' : (w > 0 || r > 0 ? 'no' : '');
+    const greenDeg = r <= 1 ? 0 : (r >= 3 ? 360 : 180);
+    const bg = greenDeg >= 360 ? '#d7ecdf'
+      : greenDeg > 0 ? `conic-gradient(#a9d8bf ${greenDeg}deg, #fbeceb ${greenDeg}deg 360deg)`
+      : ((r > 0 || w > 0) ? '#fbeceb' : '#ffffff');
+    const border = greenDeg >= 360 ? 'border-color:#7fb99b' : ((r > 0 || w > 0) ? 'border-color:#e2b0ab' : '');
+    return `<button class="qn ${cls}" style="background:${bg};${border}" data-act="coverJump" data-i="${i}"><span class="qn-n">${i + 1}</span>${(r || w) ? `<span class="qn-sub">✓${r} ✕${w}</span>` : ''}</button>`;
   }).join('')}</div>
-  <div class="legend"><span><i></i>没做过</span><span><i class="ok"></i>做对过</span><span><i class="no"></i>做错过</span><span style="margin-left:auto">点题号直接从这题开始</span></div>`
+  <div class="legend"><span><i></i>没做过</span><span><i class="ok"></i>做对过</span><span><i class="no"></i>做错过</span><span>圈内 ✓做对几次 ✕做错几次</span><span style="margin-left:auto">做对一次仍红，两次半绿，三次整圈绿</span></div>`
   : `<div class="empty" style="padding:34px 10px"><p>这个筛选下没有题</p></div>`}
 
   <div class="p-foot" style="margin-top:18px">
@@ -2642,7 +2714,7 @@ function viewPaper() {
       <input class="input" data-act="paperSubN" type="number" min="0" max="${pools.sub.length}" value="${nS}" style="width:64px;text-align:center" />
       <span class="muted" style="font-size:12px;white-space:nowrap">题</span>
     </div>
-    <div class="paper-hint">合计 <b>${total}</b> 题 · 库里可选客观 ${pools.obj.length} / 主观 ${pools.sub.length}${total > pools.obj.length + pools.sub.length ? '（不够的按现有全用上）' : ''}</div>
+    <div class="paper-hint" id="paperSumHint">合计 <b>${total}</b> 题 · 库里可选客观 ${pools.obj.length} / 主观 ${pools.sub.length}${total > pools.obj.length + pools.sub.length ? '（不够的按现有全用上）' : ''}</div>
   </div>
 
   <div class="paper-card">
@@ -2657,7 +2729,7 @@ function viewPaper() {
   </div>
 
   <div class="sticky-foot">
-    <button class="btn primary block" data-act="genPaper" ${pools.obj.length + pools.sub.length && total ? '' : 'disabled'}>${(pools.obj.length + pools.sub.length && total) ? '开始做这套（' + total + ' 题）' : '这个范围里没有题'}</button>
+    <button class="btn primary block" id="genBtn" data-act="genPaper" ${pools.obj.length + pools.sub.length && total ? '' : 'disabled'}>${(pools.obj.length + pools.sub.length && total) ? '开始做这套（' + total + ' 题）' : '这个范围里没有题'}</button>
     <div class="seg" style="margin-top:9px">
       <button data-act="recitePaper" ${pools.obj.length + pools.sub.length && total ? '' : 'disabled'}>背诵这套</button>
       <button data-act="exportPaper" data-exp="0" ${total ? '' : 'disabled'}>导出题目</button>
@@ -2667,6 +2739,22 @@ function viewPaper() {
   `;
 }
 
+function updatePaperTotal() {
+  const ps = paperState(), pools = paperPools();
+  const nO = Math.max(0, Number(ps.objN) || 0), nS = Math.max(0, Number(ps.subN) || 0);
+  const total = nO + nS;
+  const hint = document.getElementById('paperSumHint');
+  if (hint) hint.innerHTML = '合计 <b>' + total + '</b> 题 · 库里可选客观 ' + pools.obj.length + ' / 主观 ' + pools.sub.length + (total > pools.obj.length + pools.sub.length ? '（不够的按现有全用上）' : '');
+  document.querySelectorAll('[data-act="paperQuick"]').forEach(b => {
+    b.classList.toggle('on', total === Number(b.dataset.v));
+  });
+  const btn = document.getElementById('genBtn');
+  if (btn) {
+    const ok = (pools.obj.length + pools.sub.length) && total;
+    btn.disabled = !ok;
+    btn.textContent = ok ? '开始做这套（' + total + ' 题）' : '这个范围里没有题';
+  }
+}
 function paperOpts() {
   const ps = paperState();
   return {
@@ -2815,6 +2903,12 @@ function normalizeQ(q) {
 function saveEditor() {
   const m = S.modal;
   if (!m || (m.type !== 'editQ' && m.type !== 'editExp')) return;
+  if (!m.ctx) m.ctx = { kind: 'db', qid: (m.q || {}).id };
+  try { saveEditorInner(m); } catch (err) {
+    toast('保存失败：' + (err && err.message ? err.message : '未知错误'));
+  }
+}
+function saveEditorInner(m) {
   collectEditor();
   const q = normalizeQ(m.q);
   q.q = q.q.trim();
@@ -2848,6 +2942,20 @@ function saveEditor() {
     }
   }
   S.modal = null;
+  if (ctx.kind === 'db' && S.view === 'qdetail' && S.qBack) {
+    const b = S.qBack;
+    if (!b.view || b.view === 'qdetail') { b.view = 'chapter'; }
+    if (b.view === 'chapter' && !S.chapterId) b.view = 'home';
+    if (b.view === 'book' && b.bookTab === 'issue') {
+      const f = findQ(ctx.qid); if (f) delete f.q.issue;
+      saveDB();
+    }
+    S.view = b.view || 'chapter';
+    if (b.bookTab) S.bookTab = b.bookTab;
+    if (b.searchTab) S.searchTab = b.searchTab;
+    if (b.date) S.date = b.date;
+    if (b.bookCourse !== undefined) S.bookCourse = b.bookCourse;
+  }
   render();
   toast('已保存');
 }
@@ -2918,7 +3026,20 @@ document.addEventListener('click', e => {
       if (S.swipeAt && Date.now() - S.swipeAt < 500) break;
       const f = findQ(el.dataset.qid);
       if (!f) { toast('题目已删除'); break; }
-      S.qid = el.dataset.qid; S.chapterId = f.ch.id; S.view = 'qdetail'; S.modal = null; render(); break;
+      S.qid = el.dataset.qid; S.chapterId = f.ch.id;
+      S.qBack = { view: S.view, bookTab: S.bookTab, searchTab: S.searchTab, date: S.date, bookCourse: S.bookCourse };
+      S.view = 'qdetail'; S.modal = null; render(); break;
+    }
+    case 'qBack': {
+      const b = S.qBack || { view: 'chapter' };
+      S.view = (b.view && b.view !== 'qdetail') ? b.view : 'chapter';
+      if (S.view === 'chapter' && !S.chapterId) S.view = 'home';
+      if (S.view === 'book' && !S.bookTab) S.bookTab = 'wrong';
+      if (b.bookTab) S.bookTab = b.bookTab;
+      if (b.searchTab) S.searchTab = b.searchTab;
+      if (b.date) S.date = b.date;
+      if (b.bookCourse !== undefined) S.bookCourse = b.bookCourse;
+      S.modal = null; render(); break;
     }
     case 'openLog': {
       const l = DB.logs.find(x => x.id === el.dataset.id);
@@ -2978,8 +3099,41 @@ document.addEventListener('click', e => {
     }
     case 'newChapter': S.modal = { type: 'newChapter', courseId: el.dataset.course || S.courseId }; render(); break;
     case 'newChapterInFolder': S.modal = { type: 'newChapter', courseId: el.dataset.course, folder: el.dataset.folder || '' }; render(); break;
+    case 'folderUp':
+    case 'folderDown': {
+      const c = getCourse(el.dataset.course), name = el.dataset.name;
+      if (!c) break;
+      c.folders = c.folders || [];
+      folderNames(c).forEach(f => { if (!c.folders.includes(f)) c.folders.push(f); });
+      const i = c.folders.indexOf(name);
+      const j = act === 'folderUp' ? i - 1 : i + 1;
+      if (i < 0 || j < 0 || j >= c.folders.length) { toast('已经到头了'); break; }
+      const t = c.folders[i]; c.folders[i] = c.folders[j]; c.folders[j] = t;
+      saveDB(); S.modal = { type: 'foldermenu', course: c.id, name }; render();
+      break;
+    }
+    case 'chUp':
+    case 'chDown': {
+      const f = getChapter(el.dataset.id);
+      if (!f) break;
+      const list = f.c.chapters, i = list.indexOf(f.ch), dir = act === 'chUp' ? -1 : 1;
+      let j = i + dir;
+      while (j >= 0 && j < list.length && (list[j].folder || '') !== (f.ch.folder || '')) j += dir;
+      if (j < 0 || j >= list.length) { toast('已经到头了'); break; }
+      const t = list[i]; list[i] = list[j]; list[j] = t;
+      saveDB(); S.modal = { type: 'chmenu', id: f.ch.id }; render();
+      break;
+    }
     case 'folderMenu': S.modal = { type: 'foldermenu', course: el.dataset.course, name: el.dataset.folder || '' }; render(); break;
     case 'newFolder': S.modal = { type: 'newFolder', courseId: el.dataset.course || S.courseId }; render(); break;
+    case 'exportChapter': {
+      const f = getChapter(el.dataset.id);
+      if (!f) break;
+      if (!f.ch.questions.length) { toast('这个章节还没有题目'); break; }
+      download('章节_' + f.ch.name.replace(/\s+/g, '') + '_' + f.ch.questions.length + '题.txt', paperText(f.ch.questions, true));
+      toast('已导出 ' + f.ch.questions.length + ' 题');
+      break;
+    }
     case 'moveChAsk': S.modal = { type: 'moveCh', id: el.dataset.id }; render(); break;
     case 'renameFolderAsk': S.modal = { type: 'renameFolder', course: el.dataset.course, name: el.dataset.name }; render(); break;
     case 'delFolder': {
@@ -3005,6 +3159,19 @@ document.addEventListener('click', e => {
       break;
     }
 
+    case 'draftToggle': {
+      const qid = el.dataset.qid;
+      if (S.draftQ === qid) { S.draftQ = null; render(); break; }
+      S.draftQ = qid; render(); break;
+    }
+    case 'draftClose': saveDraft(); S.draftQ = null; render(); break;
+    case 'draftClear': {
+      const cv = document.getElementById('draftCv');
+      if (cv && dCtx) { dCtx.clearRect(0, 0, cv.width, cv.height); }
+      if (S.draftQ) { delete IMG[draftKey(S.draftQ)]; IDB.del(draftKey(S.draftQ)); }
+      toast('草稿已清空');
+      break;
+    }
     case 'qFilter': S.qFilter = el.dataset.f; render(); break;
 
     case 'goImport': {
@@ -3169,14 +3336,45 @@ document.addEventListener('click', e => {
       const ta = $('#mExp');
       if (ta) m.q.exp = ta.value;
       if (!hlSel || hlSel.e <= hlSel.s) { toast('先用手指按住选中要标重点的文字'); break; }
+      hlPush(m);
       m.q.hl = m.q.hl || [];
       m.q.hl.push({ s: hlSel.s, e: Math.min(hlSel.e, m.q.exp.length), c: el.dataset.c || 'y' });
       refreshHLPreview();
       break;
     }
+    case 'hlRemove': {
+      const m = S.modal;
+      if (!m || (m.type !== 'editQ' && m.type !== 'editExp')) break;
+      const i = Number(el.dataset.hl);
+      if (!m.q.hl || !m.q.hl[i]) break;
+      hlPush(m);
+      m.q.hl.splice(i, 1);
+      refreshHLPreview();
+      toast('已去掉这句的标记，可用「撤销一步」恢复');
+      break;
+    }
+    case 'hlUndo': {
+      const m = S.modal;
+      if (!m || (m.type !== 'editQ' && m.type !== 'editExp')) break;
+      if (!m.hist || !m.hist.length) { toast('没有可以撤销的改动了'); break; }
+      const snap = m.hist.pop();
+      hlApply(m, snap);
+      toast('已撤销一步');
+      break;
+    }
+    case 'hlReset': {
+      const m = S.modal;
+      if (!m || (m.type !== 'editQ' && m.type !== 'editExp')) break;
+      if (!m.origin) { toast('已经是最初的内容'); break; }
+      hlPush(m);
+      hlApply(m, m.origin);
+      toast('已还原成修改前');
+      break;
+    }
     case 'hlClear': {
       const m = S.modal;
       if (!m || (m.type !== 'editQ' && m.type !== 'editExp')) break;
+      hlPush(m);
       m.q.hl = [];
       refreshHLPreview();
       toast('高光已清除');
@@ -3325,7 +3523,7 @@ document.addEventListener('click', e => {
       const P = S.practice;
       if (P) {
         P.idx = Number(el.dataset.i) || 0;
-        P.picked = null; P.multiSel = []; P.submitted = false; P.revealed = false; P.judged = null; P.correct = null;
+        loadAnswerState(P);
         saveSession();
       }
       S.modal = null; render(); break;
@@ -3353,7 +3551,7 @@ document.addEventListener('click', e => {
       const P = S.practice;
       if (!P || P.idx === 0) break;
       P.idx--;
-      P.picked = null; P.multiSel = []; P.submitted = false; P.revealed = false; P.judged = null; P.correct = null;
+      loadAnswerState(P);
       removeMarkBar(); saveSession(); render();
       break;
     }
@@ -3390,6 +3588,7 @@ document.addEventListener('click', e => {
         picked: null, multiSel: [], submitted: false, revealed: false, judged: null, correct: null,
         title: d.title, courseId: d.courseId, chapterId: d.chapterId, mode: d.mode
       };
+      loadAnswerState(S.practice);
       S.view = 'practice';
       render();
       break;
@@ -3619,6 +3818,28 @@ function fallbackCopy(t) {
 
 /* 解析高光编辑 */
 let hlSel = null;
+function hlSnap() {
+  const m = S.modal;
+  if (!m || (m.type !== 'editQ' && m.type !== 'editExp')) return null;
+  const ta = $('#mExp');
+  if (ta) m.q.exp = ta.value;
+  return { exp: m.q.exp, hl: (m.q.hl || []).map(h => ({ ...h })) };
+}
+function hlPush(m) {
+  const cur = hlSnap();
+  if (!cur) return;
+  if (!m.origin) m.origin = { exp: cur.exp, hl: cur.hl.map(h => ({ ...h })) };
+  m.hist = m.hist || [];
+  m.hist.push(cur);
+  if (m.hist.length > 40) m.hist.shift();
+}
+function hlApply(m, snap) {
+  m.q.exp = snap.exp;
+  m.q.hl = snap.hl.map(h => ({ ...h }));
+  const ta = $('#mExp');
+  if (ta) ta.value = snap.exp;
+  refreshHLPreview();
+}
 function refreshHLPreview() {
   const m = S.modal;
   const pv = document.getElementById('hlPreview');
@@ -3649,6 +3870,7 @@ document.addEventListener('selectionchange', () => {
 function removeQuestion(qid) {
   const f = findQ(qid);
   if (!f) { toast('题目已删除'); return; }
+  delete IMG[draftKey(qid)]; IDB.del(draftKey(qid));
   f.ch.questions = f.ch.questions.filter(x => x.id !== qid);
   clearQuestionFromPaper(qid);
   saveDB();
@@ -3710,10 +3932,67 @@ function showMarkBar(qid) {
   stem.parentNode.insertBefore(bar, stem.nextSibling);
 }
 
+/* ---------- 草稿层（每个题一张透明纸） ---------- */
+let dCtx = null, dRect = null, dDrawing = false, dLast = null, dSaveT = null;
+function draftKey(qid) { return 'draft_' + qid; }
+function mountDraft() {
+  const cv = document.getElementById('draftCv');
+  if (!cv || !S.draftQ) return;
+  const layer = cv.parentElement;
+  const w = Math.max(1, layer.clientWidth), h = Math.max(1, layer.clientHeight - 0);
+  const dpr = Math.min(2, window.devicePixelRatio || 1.5);
+  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+  dCtx = cv.getContext('2d');
+  dCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  dCtx.lineWidth = 2.4; dCtx.lineCap = 'round'; dCtx.lineJoin = 'round'; dCtx.strokeStyle = '#c0392b';
+  dRect = cv.getBoundingClientRect();
+  const saved = IMG[draftKey(S.draftQ)];
+  if (saved) {
+    const im = new Image();
+    im.onload = () => { try { dCtx.drawImage(im, 0, 0, w, h); } catch (e) {} };
+    im.src = saved;
+  }
+  const pos = e => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  cv.onpointerdown = e => {
+    e.preventDefault(); cv.setPointerCapture && cv.setPointerCapture(e.pointerId);
+    dDrawing = true; dLast = pos(e);
+  };
+  cv.onpointermove = e => {
+    if (!dDrawing || !dCtx) return;
+    e.preventDefault();
+    const p2 = pos(e);
+    dCtx.beginPath(); dCtx.moveTo(dLast.x, dLast.y); dCtx.lineTo(p2.x, p2.y); dCtx.stroke();
+    dLast = p2;
+  };
+  const end = () => {
+    if (!dDrawing) return;
+    dDrawing = false;
+    clearTimeout(dSaveT);
+    dSaveT = setTimeout(saveDraft, 260);
+  };
+  cv.onpointerup = end; cv.onpointercancel = end; cv.onpointerleave = end;
+  window.addEventListener('resize', relayoutDraft, { once: true });
+}
+function saveDraft() {
+  const cv = document.getElementById('draftCv');
+  if (!cv || !S.draftQ) return;
+  try {
+    const url = cv.toDataURL('image/png');
+    IMG[draftKey(S.draftQ)] = url;
+    IDB.put(draftKey(S.draftQ), url);
+  } catch (e) {}
+}
+function relayoutDraft() {
+  if (!S.draftQ || !dCtx) return;
+  const cv = document.getElementById('draftCv');
+  if (!cv) return;
+  saveDraft();
+  mountDraft();
+}
+
 /* 长按收藏 */
 document.addEventListener('contextmenu', e => {
-  if (e.target.closest('[data-favq]')) e.preventDefault();
-  if (e.target.closest('.p-stem')) e.preventDefault();
+  if (e.target.closest('[data-favq]') && S.view !== 'practice') e.preventDefault();
 });
 let favTimer = null, favStart = null;
 function toggleFav(qid) {
@@ -3841,18 +4120,26 @@ document.addEventListener('input', e => {
     const box = $('#searchResults');
     if (box) box.innerHTML = searchResultsHTML();
   }
+  const pa = t.dataset ? t.dataset.act : '';
+  if (pa === 'paperObjN') { paperState().objN = Math.max(0, Number(t.value) || 0); updatePaperTotal(); return; }
+  if (pa === 'paperSubN') { paperState().subN = Math.max(0, Number(t.value) || 0); updatePaperTotal(); return; }
+  if (pa === 'paperCount') {
+    const ps = paperState();
+    const n = Math.max(1, Number(t.value) || 90);
+    ps.objN = Math.round(n * (ps.share == null ? 0.9 : ps.share));
+    ps.subN = Math.max(0, n - ps.objN);
+    const oi = document.querySelector('[data-act="paperObjN"]'), si = document.querySelector('[data-act="paperSubN"]');
+    if (oi) oi.value = ps.objN;
+    if (si) si.value = ps.subN;
+    updatePaperTotal();
+    return;
+  }
 });
 
 /* 文件选择 */
 document.addEventListener('change', e => {
-  if (e.target.dataset && e.target.dataset.act === 'paperObjN') { paperState().objN = Math.max(0, Number(e.target.value) || 0); render(); return; }
-  if (e.target.dataset && e.target.dataset.act === 'paperSubN') { paperState().subN = Math.max(0, Number(e.target.value) || 0); render(); return; }
-  if (e.target.dataset && e.target.dataset.act === 'paperCount') {
-    const ps = paperState();
-    const t = Math.max(1, Number(e.target.value) || 90);
-    ps.objN = Math.round(t * (ps.share == null ? 0.9 : ps.share));
-    ps.subN = t - ps.objN;
-    render();
+  if (e.target.dataset && ['paperObjN','paperSubN','paperCount'].indexOf(e.target.dataset.act) > -1) {
+    updatePaperTotal();
     return;
   }
   if (e.target.id === 'file') {
