@@ -131,7 +131,7 @@ textarea.input{resize:vertical}
 
 /* ---------- 课程 ---------- */
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 4px}
-.actions .btn{flex:1;min-width:96px}
+.actions .btn{flex:1 1 calc(50% - 4px);min-width:0}
 .chapter-list{margin-top:14px;display:grid;gap:9px}
 .folder-head{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);margin:14px 2px 2px}
 .folder-head b{font-family:"Noto Serif SC",serif;font-size:12.5px;color:#3d5266;font-weight:600}
@@ -1131,7 +1131,7 @@ function viewHome() {
 function foldersOfCourse(courseId) {
   const c = getCourse(courseId);
   if (!c) return [];
-  return Array.from(new Set(c.chapters.map(ch => ch.folder || '').filter(Boolean)));
+  return folderNames(c);
 }
 function courseCard(c) {
   const n = qCount(c), done = doneCount(c), acc = courseAcc(c), wn = wrongCount(c);
@@ -1203,6 +1203,7 @@ function viewCourse() {
     <button class="btn primary" data-act="practiceSheet" data-course="${c.id}">开始练习</button>
     <button class="btn" data-act="goImport" data-course="${c.id}">导入题目</button>
     <button class="btn" data-act="newChapter" data-course="${c.id}">＋ 章节</button>
+    <button class="btn" data-act="newFolder" data-course="${c.id}">＋ 文件夹</button>
   </div>
 
   <div class="chapter-list">
@@ -1221,7 +1222,7 @@ function chapterRow(c, ch, i) {
   const n = ch.questions.length;
   const ob = ch.questions.filter(isObj).length;
   const done = ch.questions.filter(q => q.st.right + q.st.wrong > 0).length;
-  return `<button class="chapter-row" data-act="openChapter" data-id="${ch.id}">
+  return `<button class="chapter-row" data-act="openChapter" data-id="${ch.id}" data-chhold="${ch.id}" data-course="${c.id}">
     <div class="ch-main">
       <div class="ch-name"><span class="num">${pad(i + 1)}</span>${esc(ch.name)}</div>
       <div class="ch-sub">${n} 题 · 客观 ${ob} / 主观 ${n - ob}${done ? ' · 做过 ' + done + ' 题' : ''}</div>
@@ -1230,15 +1231,22 @@ function chapterRow(c, ch, i) {
   </button>`;
 }
 
+function folderNames(c) {
+  const set = new Set((c.folders || []).filter(Boolean));
+  c.chapters.forEach(ch => { if (ch.folder) set.add(ch.folder); });
+  return Array.from(set);
+}
 function chapterBlocks(c) {
-  const hasFolders = c.chapters.some(ch => ch.folder);
-  if (!hasFolders) return c.chapters.map((ch, i) => chapterRow(c, ch, i)).join('');
-  const names = Array.from(new Set(c.chapters.map(ch => ch.folder || ''))).sort((a, b) => (a === '' ? 1 : b === '' ? -1 : a.localeCompare(b, 'zh')));
-  return names.map(fo => {
+  const names = folderNames(c);
+  const noneList = c.chapters.filter(ch => !ch.folder);
+  if (!names.length) return noneList.map(ch => chapterRow(c, ch, c.chapters.indexOf(ch))).join('');
+  const head = (fo, n) => `<div class="folder-head" data-folderhold="${esc(fo)}" data-course="${c.id}" data-act="folderMenu" data-folder="${esc(fo)}"><span>📁</span><b>${fo ? esc(fo) : '未分组'}</b><span class="n">${n} 章</span></div>`;
+  let out = names.map(fo => {
     const list = c.chapters.filter(ch => (ch.folder || '') === fo);
-    return `<div class="folder-head"><span>📁</span><b>${fo ? esc(fo) : '未分组'}</b><span class="n">${list.length} 章</span></div>`
-      + list.map(ch => chapterRow(c, ch, c.chapters.indexOf(ch))).join('');
+    return head(fo, list.length) + list.map(ch => chapterRow(c, ch, c.chapters.indexOf(ch))).join('');
   }).join('');
+  if (noneList.length) out += head('', noneList.length) + noneList.map(ch => chapterRow(c, ch, c.chapters.indexOf(ch))).join('');
+  return out;
 }
 
 /* ---------- 章节 ---------- */
@@ -1812,7 +1820,21 @@ function hl(text, kw) {
 function viewModal() {
   const m = S.modal;
   let body = '';
-  if (m.type === 'profile') {
+  if (m.type === 'qmenu') {
+    const f = findQ(m.qid);
+    if (!f) { body = '<h3>题目已不存在</h3><div class="modal-actions"><button class="btn primary" data-act="modalClose">好</button></div>'; }
+    else {
+      const q = f.q;
+      body = `<h3>这道题</h3>
+        <p class="hint">${esc(f.c.name)} › ${esc(f.ch.name)}</p>
+        <div class="short-box" style="margin-bottom:12px;max-height:26vh;overflow:auto">${esc((q.q || '').slice(0, 120))}${(q.q || '').length > 120 ? '…' : ''}</div>
+        <div class="bk-row">
+          <button class="btn" data-act="qmenuFav" data-qid="${q.id}" style="flex:1">${q.fav ? '★ 取消收藏' : '☆ 收藏'}</button>
+          <button class="btn" data-act="qmenuDel" data-qid="${q.id}" style="flex:1;color:var(--red);border-color:#eccfca">删除这道题</button>
+        </div>
+        <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button></div>`;
+    }
+  } else if (m.type === 'profile') {
     const p = DB.profile;
     const majors = ['临床医学', '儿科学', '护理学', '药学', '预防医学', '医学检验技术', '口腔医学', '中医学', '麻醉学', '医学影像学'];
     const grades = ['大一', '大二', '大三', '大四', '研一', '研二', '研三'];
@@ -1862,6 +1884,34 @@ function viewModal() {
       <div class="field"><label class="field-label">文件夹（可改，留空即未分组）</label><input class="input" id="mchFolder" list="dlFolder" value="${esc(m.folder || '')}" />
         <datalist id="dlFolder">${foldersOfCourse(m.courseId).map(f => `<option value="${esc(f)}"></option>`).join('')}</datalist>
       </div>
+      <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button><button class="btn primary" data-act="modalOk">保存</button></div>`;
+  } else if (m.type === 'newFolder') {
+    body = `<h3>新建文件夹</h3><p class="hint">文件夹用来把章节分堆，比如“期末”“复习课”。</p>
+      <div class="field"><label class="field-label">文件夹名</label><input class="input" id="mfoName" placeholder="如 期末重点" /></div>
+      <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button><button class="btn primary" data-act="modalOk">创建</button></div>`;
+  } else if (m.type === 'foldermenu') {
+    body = `<h3>📁 ${m.name ? esc(m.name) : '未分组'}</h3><p class="hint">${m.name ? '长按文件夹可以改名或删掉这个文件夹。' : '导入时没填文件夹的章节会落到这里。'}</p>
+      ${m.name ? `<div class="btn" data-act="newChapterInFolder" data-course="${m.course}" data-folder="${esc(m.name)}" style="width:100%;margin-bottom:8px;text-align:center;padding:12px;cursor:pointer">＋ 在这个文件夹新建章节</div>
+      <div class="bk-row"><button class="btn" data-act="renameFolderAsk" data-course="${m.course}" data-name="${esc(m.name)}" style="flex:1">重命名</button>
+      <button class="btn" data-act="delFolder" data-course="${m.course}" data-name="${esc(m.name)}" style="flex:1;color:var(--red);border-color:#eccfca">删除文件夹</button></div>` : '<p class="hint">未分组里的章节，长按单章就能移走或删掉。</p>'}
+      <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button></div>`;
+  } else if (m.type === 'chmenu') {
+    const f = getChapter(m.id);
+    const n = f ? f.ch.questions.length : 0;
+    body = `<h3>${f ? esc(f.ch.name) : '章节'}</h3><p class="hint">${f ? (f.ch.folder ? '📁 ' + esc(f.ch.folder) + ' · ' : '') + n + ' 题' : ''}</p>
+      <div style="margin:12px 0">
+        <button class="btn" data-act="moveChAsk" data-id="${m.id}" style="width:100%;margin-bottom:8px">移动到其他文件夹</button>
+        <button class="btn" data-act="renameChapter" data-id="${m.id}" style="width:100%;margin-bottom:8px">重命名章节</button>
+        <button class="btn" data-act="delChapter" data-id="${m.id}" style="width:100%;color:var(--red);border-color:#eccfca">删除这个章节${n ? '（' + n + ' 题一起删）' : ''}</button>
+      </div>
+      <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button></div>`;
+  } else if (m.type === 'moveCh') {
+    const f = getChapter(m.id);
+    body = `<h3>移到哪个文件夹</h3><p class="hint">留空就是“未分组”。</p>
+      <div class="field"><label class="field-label">文件夹名</label><input class="input" id="mfoName" value="${esc(f && f.ch.folder ? f.ch.folder : '')}" placeholder="填新名字或留空" /></div>
+      <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button><button class="btn primary" data-act="modalOk">移动</button></div>`;
+  } else if (m.type === 'renameFolder') {
+    body = `<h3>重命名文件夹</h3><div class="field" style="margin-top:12px"><input class="input" id="mfoName" value="${esc(m.name)}" /></div>
       <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button><button class="btn primary" data-act="modalOk">保存</button></div>`;
   } else if (m.type === 'delChapter') {
     body = `<h3>删除这个章节？</h3><p class="hint">“${esc(m.value)}” 里的 ${m.count} 道题会一起删除。</p>
@@ -2861,7 +2911,8 @@ document.addEventListener('click', e => {
     }
 
     case 'openCourse': S.courseId = el.dataset.id; S.view = 'course'; S.modal = null; render(); break;
-    case 'openChapter': S.chapterId = el.dataset.id; S.qFilter = 'all'; S.view = 'chapter'; S.modal = null; render(); break;
+    case 'openChapter':
+      if (S.holdAt && Date.now() - S.holdAt < 500) break; S.chapterId = el.dataset.id; S.qFilter = 'all'; S.view = 'chapter'; S.modal = null; render(); break;
     case 'openQ': {
       if (S.favAt && Date.now() - S.favAt < 500) break;
       if (S.swipeAt && Date.now() - S.swipeAt < 500) break;
@@ -2875,6 +2926,8 @@ document.addEventListener('click', e => {
       break;
     }
 
+    case 'qmenuFav': { const qid = el.dataset.qid; S.modal = null; toggleFav(qid); break; }
+    case 'qmenuDel': { const qid = el.dataset.qid; S.modal = null; removeQuestion(qid); break; }
     case 'manageCourses': S.view = 'manage'; render(); break;
     case 'newCourse': S.modal = { type: 'newCourse' }; render(); break;
     case 'courseMove': {
@@ -2924,6 +2977,23 @@ document.addEventListener('click', e => {
       break;
     }
     case 'newChapter': S.modal = { type: 'newChapter', courseId: el.dataset.course || S.courseId }; render(); break;
+    case 'newChapterInFolder': S.modal = { type: 'newChapter', courseId: el.dataset.course, folder: el.dataset.folder || '' }; render(); break;
+    case 'folderMenu': S.modal = { type: 'foldermenu', course: el.dataset.course, name: el.dataset.folder || '' }; render(); break;
+    case 'newFolder': S.modal = { type: 'newFolder', courseId: el.dataset.course || S.courseId }; render(); break;
+    case 'moveChAsk': S.modal = { type: 'moveCh', id: el.dataset.id }; render(); break;
+    case 'renameFolderAsk': S.modal = { type: 'renameFolder', course: el.dataset.course, name: el.dataset.name }; render(); break;
+    case 'delFolder': {
+      const c = getCourse(el.dataset.course), name = el.dataset.name;
+      if (!c) break;
+      const n = c.chapters.filter(ch => ch.folder === name).length;
+      S.modal = null; render();
+      if (confirm('删除文件夹「' + name + '」？' + (n ? '里面的 ' + n + ' 个章节会移到「未分组」。' : ''))) {
+        c.folders = (c.folders || []).filter(f => f !== name);
+        c.chapters.forEach(ch => { if (ch.folder === name) ch.folder = ''; });
+        saveDB(); render(); toast('文件夹已删除');
+      }
+      break;
+    }
     case 'renameChapter': {
       const f = getChapter(el.dataset.id);
       if (f) { S.modal = { type: 'renameChapter', id: f.ch.id, value: f.ch.name, folder: f.ch.folder || '', courseId: f.c.id }; render(); setTimeout(() => { const i = $('#mchName'); if (i) { i.focus(); i.select(); } }, 60); }
@@ -3414,6 +3484,33 @@ function modalOk() {
     DB.courses = DB.courses.filter(c => c.id !== m.id);
     DB.logs = DB.logs.filter(l => l.courseId !== m.id);
     saveDB(); S.modal = null; S.view = 'browse'; render(); toast('已删除');
+  } else if (m.type === 'newFolder') {
+    const v = ($('#mfoName') || {}).value.trim();
+    const c = getCourse(m.courseId);
+    if (!v) { toast('给文件夹起个名字'); return; }
+    if (!c) { S.modal = null; render(); return; }
+    c.folders = c.folders || [];
+    if (c.folders.includes(v) || c.chapters.some(ch => ch.folder === v)) { toast('已经有同名文件夹'); return; }
+    c.folders.push(v); saveDB();
+    S.modal = null; render(); toast('已新建文件夹「' + v + '」');
+  } else if (m.type === 'moveCh') {
+    const f = getChapter(m.id);
+    if (f) {
+      const v = ($('#mfoName') || {}).value.trim();
+      f.ch.folder = v;
+      if (v) { f.c.folders = f.c.folders || []; if (!f.c.folders.includes(v)) f.c.folders.push(v); }
+      saveDB(); toast(v ? '已移到「' + v + '」' : '已移到未分组');
+    }
+    S.modal = null; render();
+  } else if (m.type === 'renameFolder') {
+    const v = ($('#mfoName') || {}).value.trim();
+    const c = getCourse(m.course);
+    if (c && v) {
+      c.folders = (c.folders || []).map(f => f === m.name ? v : f);
+      c.chapters.forEach(ch => { if (ch.folder === m.name) ch.folder = v; });
+      saveDB(); toast('文件夹已改名');
+    }
+    S.modal = null; render();
   } else if (m.type === 'newChapter') {
     const v = ($('#mchName') || {}).value.trim();
     const c = getCourse(m.courseId);
@@ -3549,11 +3646,9 @@ document.addEventListener('selectionchange', () => {
 });
 
 /* 删除单题（列表左滑 / 详情页共用） */
-function askDeleteQ(qid) {
+function removeQuestion(qid) {
   const f = findQ(qid);
   if (!f) { toast('题目已删除'); return; }
-  const stem = (f.q.q || '').slice(0, 36);
-  if (!confirm('删除这道题？\n' + stem + (f.q.q && f.q.q.length > 36 ? '…' : ''))) return;
   f.ch.questions = f.ch.questions.filter(x => x.id !== qid);
   clearQuestionFromPaper(qid);
   saveDB();
@@ -3561,6 +3656,13 @@ function askDeleteQ(qid) {
   if (S.view === 'qdetail' && S.qid === qid) { S.view = 'chapter'; S.chapterId = f.ch.id; }
   render();
   toast('已删除这道题');
+}
+function askDeleteQ(qid) {
+  const f = findQ(qid);
+  if (!f) { toast('题目已删除'); return; }
+  const stem = (f.q.q || '').slice(0, 36);
+  if (!confirm('删除这道题？\n' + stem + (f.q.q && f.q.q.length > 36 ? '…' : ''))) return;
+  removeQuestion(qid);
 }
 function clearQuestionFromPaper(qid) {
   if (S.practice && S.practice.list) S.practice.list = S.practice.list.filter(q => q.id !== qid);
@@ -3628,10 +3730,15 @@ document.addEventListener('pointerdown', e => {
   favStart = { x: e.clientX, y: e.clientY, id: t.dataset.favq };
   clearTimeout(favTimer);
   favTimer = setTimeout(() => {
-    if (!favStart) return;
-    S.favAt = Date.now();
-    toggleFav(favStart.id);
+    const st = favStart;
+    if (!st) return;
     favStart = null;
+    if (S.view === 'practice') { S.favAt = Date.now(); toggleFav(st.id); return; }
+    S.favAt = Date.now();
+    const f = findQ(st.id);
+    if (!f) return;
+    S.modal = { type: 'qmenu', qid: st.id };
+    render();
   }, 560);
 });
 ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => {
@@ -3640,6 +3747,31 @@ document.addEventListener('pointerdown', e => {
 document.addEventListener('pointermove', e => {
   if (!favStart) return;
   if (Math.abs(e.clientX - favStart.x) > 8 || Math.abs(e.clientY - favStart.y) > 8) { clearTimeout(favTimer); favStart = null; }
+});
+
+/* 科目页长按：章节行/文件夹头弹菜单 */
+let chTimer = null, chStart = null;
+document.addEventListener('pointerdown', e => {
+  const row = e.target.closest('[data-chhold]');
+  const fo = e.target.closest('[data-folderhold]');
+  if (!row && !fo) return;
+  chStart = { x: e.clientX, y: e.clientY, ch: row ? row.dataset.chhold : null, fo: fo ? fo.dataset.folderhold : null, course: (row || fo).dataset.course };
+  clearTimeout(chTimer);
+  chTimer = setTimeout(() => {
+    const st = chStart; chStart = null;
+    if (!st) return;
+    S.holdAt = Date.now();
+    if (st.ch) S.modal = { type: 'chmenu', id: st.ch };
+    else S.modal = { type: 'foldermenu', course: st.course, name: st.fo || '' };
+    render();
+  }, 520);
+});
+['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => {
+  document.addEventListener(ev, () => { clearTimeout(chTimer); chStart = null; }, true);
+});
+document.addEventListener('pointermove', e => {
+  if (!chStart) return;
+  if (Math.abs(e.clientX - chStart.x) > 8 || Math.abs(e.clientY - chStart.y) > 8) { clearTimeout(chTimer); chStart = null; }
 });
 
 /* 做题页长按：选项=排除，题干=标记条，卡片空白=收藏 */
