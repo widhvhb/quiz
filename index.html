@@ -254,6 +254,15 @@ textarea#pasteText{min-height:160px;font-size:16px;line-height:1.7}
 .hl-y{background:#ffe9a6;border-radius:3px;box-decoration-break:clone;padding:0 1px}
 .hl-r{background:#ffd4cf;border-radius:3px;box-decoration-break:clone;padding:0 1px}
 .hl-b{background:#cfe4ff;border-radius:3px;box-decoration-break:clone;padding:0 1px}
+.bk-box{margin:6px 0 12px;padding:11px 12px;background:#f5f9ff;border:1px solid #dce8f6;border-radius:12px}
+.bk-t{font-size:12.5px;font-weight:600;color:#3d566f}
+.bk-d{font-size:11.5px;color:var(--muted);line-height:1.6;margin:3px 0 8px}
+.bk-row{display:flex;gap:8px}
+.resume-bar{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #bfd6f2;box-shadow:0 2px 8px rgba(47,107,176,.08);border-radius:13px;padding:9px 10px 9px 13px;margin:10px 0 2px}
+.resume-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;background:none;border:none;padding:0;text-align:left;cursor:pointer}
+.resume-t{font-size:13.5px;font-weight:600;color:var(--accent-dark)}
+.resume-s{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.resume-x{width:24px;height:24px;border-radius:50%;border:none;background:#eef4fb;color:#7b8fa3;font-size:14px;line-height:1;cursor:pointer;flex:0 0 auto}
 .hl-preview{white-space:pre-wrap;font-size:13.5px;line-height:1.75;color:#3f566b;background:#fbfdff;border:1px dashed #dbe6f1;border-radius:10px;padding:10px 11px;margin-top:8px;max-height:26vh;overflow:auto;-webkit-user-select:text;user-select:text}
 .hl-tools{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:9px}
 .hl-tools .t{font-size:11.5px;color:var(--muted);margin-right:2px}
@@ -419,6 +428,7 @@ input:not([type=checkbox]):not([type=radio]),textarea,select{font-size:16px}
 <body>
 <div id="app"></div>
 <input id="imgFile" type="file" accept="image/*" multiple hidden />
+<input id="restoreFile" type="file" accept=".json,application/json" hidden />
 
 <script src="https://fastly.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
 <script>
@@ -956,6 +966,19 @@ function render() {
 }
 
 /* ---------- 首页 ---------- */
+function resumeBanner() {
+  const d = loadSession();
+  if (!d) return '';
+  const done = (d.answers || []).length;
+  return `<div class="resume-bar">
+    <button class="resume-main" data-act="resumeSession">
+      <span class="resume-t">继续上次练习</span>
+      <span class="resume-s">${esc(d.title || '练习')} · 第 ${Math.min(d.idx + 1, d.list.length)}/${d.list.length} 题 · 已答 ${done} 题</span>
+    </button>
+    <button class="resume-x" data-act="dropSession">×</button>
+  </div>`;
+}
+
 function viewHome() {
   const p = DB.profile;
   const list = myCourses();
@@ -978,6 +1001,7 @@ function viewHome() {
   <button class="searchbar" data-act="goSearch">
     ${ICON.search}<span>搜题目关键词，或按日期找做过的题</span>
   </button>
+  ${resumeBanner()}
 
   <section class="sec">
     <div class="sec-head"><h2>今年在学</h2><span class="muted">${list.length} 门 · ${total} 题</span></div>
@@ -1175,11 +1199,11 @@ function qItem(q) {
       ${q.fav ? '<span class="tag fav">★ 收藏</span>' : ''}
       ${q.issue ? '<span class="tag issue">反馈</span>' : ''}
       ${q.type !== 'short' && q.answer ? '<span class="tag ghost">' + esc(answerText(q)) + '</span>' : ''}
-      ${q.images.length ? '<span class="tag ghost">图 ' + q.images.length + '</span>' : ''}
+      ${(q.images||[]).length ? '<span class="tag ghost">图 ' + (q.images||[]).length + '</span>' : ''}
       ${st.right || st.wrong ? `<span class="qi-stat">${st.right} 对 · ${st.wrong} 错</span>` : ''}
     </div>
     <div class="qi-stem">${esc(q.q)}</div>
-    ${q.images.length ? `<div class="qi-imgs">${q.images.slice(0, 4).map(id => IMG[id] ? `<img src="${IMG[id]}" alt="">` : '').join('')}</div>` : ''}
+    ${(q.images||[]).length ? `<div class="qi-imgs">${(q.images||[]).slice(0, 4).map(id => IMG[id] ? `<img src="${IMG[id]}" alt="">` : '').join('')}</div>` : ''}
   </button>`;
 }
 
@@ -1203,7 +1227,7 @@ function viewQDetail() {
     <button class="ask" data-act="askQ" data-qid="${q.id}" title="这道题有问题？点这里反馈">?</button>
   </div>
   <div class="q-stem-detail">${esc(q.q)}</div>
-  ${q.images.length ? `<div class="q-imgs">${q.images.map(id => IMG[id] ? `<img src="${IMG[id]}" alt="">` : '').join('')}</div>` : ''}
+  ${(q.images||[]).length ? `<div class="q-imgs">${(q.images||[]).map(id => IMG[id] ? `<img src="${IMG[id]}" alt="">` : '').join('')}</div>` : ''}
   ${q.type !== 'short' ? `<div class="d-opts">${q.options.map(o => `
     <div class="d-opt ${q.answer.indexOf(o.k) > -1 ? 'ans' : ''}"><span class="k">${o.k}</span><span>${esc(o.t)}</span></div>`).join('')}</div>
   <div class="ans-line">正确答案 <b>${esc(answerText(q))}</b></div>` : ''}
@@ -1391,7 +1415,7 @@ function previewCard(q, i) {
       ${q.answer ? `<span class="tag ghost">${esc(answerText(q))}</span>` : ''}
     </div>
     <div class="qc-stem">${esc(q.q)}</div>
-    ${q.images && q.images.length ? `<div class="qc-imgs">${q.images.map(id => IMG[id] ? `<img src="${IMG[id]}" alt="">` : '').join('')}</div>` : ''}
+    ${q.images && (q.images||[]).length ? `<div class="qc-imgs">${(q.images||[]).map(id => IMG[id] ? `<img src="${IMG[id]}" alt="">` : '').join('')}</div>` : ''}
     ${q.options.length ? `<ul class="qc-opts">${q.options.map(o => `<li class="${q.answer.indexOf(o.k) > -1 ? 'ans' : ''}"><b>${o.k}</b>${esc(o.t)}</li>`).join('')}</ul>` : ''}
     ${q.exp ? `<div class="exp" style="margin-top:9px"><span class="exp-label">${q.type === 'short' ? '参考答案' : '解析'}</span>${expHTML(q.exp, q.hl)}</div>` : ''}
     <div class="qc-foot">
@@ -1426,7 +1450,7 @@ function viewPractice() {
       <button class="ask" data-act="askQ" data-qid="${q.id}" title="这道题有问题？点这里反馈">?</button>
     </div>
     <div class="p-stem">${esc(q.q)}</div>
-    ${q.images.length ? `<div class="q-imgs">${q.images.map(id => IMG[id] ? `<img src="${IMG[id]}" alt="">` : '').join('')}</div>` : ''}
+    ${(q.images||[]).length ? `<div class="q-imgs">${(q.images||[]).map(id => IMG[id] ? `<img src="${IMG[id]}" alt="">` : '').join('')}</div>` : ''}
     ${renderAnswerArea(q, P)}
     ${renderFeedback(q, P)}
   </div>
@@ -1706,6 +1730,14 @@ function viewModal() {
         <div class="seg">${grades.map(x => `<button data-act="pickGrade" data-v="${x}" class="${p.grade === x ? 'on' : ''}">${x}</button>`).join('')}</div>
       </div>
       <div style="margin:-4px 0 10px"><button class="linkbtn" data-act="newType" style="padding:0">自定义题型（名词解释、填空、论述…）</button></div>
+      <div class="bk-box">
+        <div class="bk-t">数据备份（换手机 / 换浏览器用）</div>
+        <div class="bk-d">包含题库、图片、练习记录、错题、收藏、反馈，导出成一个文件。</div>
+        <div class="bk-row">
+          <button class="btn" data-act="exportAll" style="flex:1">导出备份</button>
+          <button class="btn" data-act="pickRestore" style="flex:1">从备份恢复</button>
+        </div>
+      </div>
       <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button><button class="btn primary" data-act="modalOk">保存</button></div>`;
   } else if (m.type === 'newCourse') {
     body = `<h3>新建一门科目</h3>
@@ -1899,6 +1931,82 @@ function scopeCounts(arr) {
   };
 }
 
+const SESS_KEY = 'quiz_session_v1';
+function saveSession() {
+  const P = S.practice;
+  if (!P) return;
+  try {
+    localStorage.setItem(SESS_KEY, JSON.stringify({
+      ids: P.list.map(q => q.id), idx: P.idx, title: P.title, courseId: P.courseId,
+      chapterId: P.chapterId, mode: P.mode, answers: P.answers, savedAt: Date.now()
+    }));
+  } catch (e) {}
+}
+async function idbAll() {
+  const out = {};
+  if (!IDB.db) return out;
+  await new Promise((res) => {
+    try {
+      const tx = IDB.db.transaction('imgs', 'readonly');
+      const rq = tx.objectStore('imgs').openCursor();
+      rq.onsuccess = () => { const c = rq.result; if (c) { out[c.key] = c.value; c.continue(); } else res(); };
+      rq.onerror = res;
+    } catch (e) { res(); }
+  });
+  return out;
+}
+
+async function exportAllData() {
+  try {
+    const imgs = Object.assign({}, IMG, await idbAll());
+    const payload = { app: 'quiz-station', v: 2, at: Date.now(), db: DB, imgs };
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const name = '刷题小站备份_' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes()) + '.json';
+    const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    toast('备份已导出，共 ' + DB.courses.reduce((n, c) => n + qCount(c), 0) + ' 题');
+  } catch (e) { toast('导出失败，可能是图片太大'); }
+}
+
+async function restoreAllData(file, el) {
+  try {
+    const txt = await file.text();
+    const d = JSON.parse(txt);
+    if (!d || !d.db || !Array.isArray(d.db.courses)) { toast('这不是刷题小站的备份文件'); return; }
+    const n = d.db.courses.reduce((s, c) => s + (c.chapters || []).reduce((m, ch) => m + (ch.questions || []).length, 0), 0);
+    if (!confirm('恢复会用备份覆盖当前题库和记录（共 ' + n + ' 题），确定吗？')) return;
+    DB = normalizeDB(d.db);
+    saveDB();
+    for (const [k, v] of Object.entries(d.imgs || {})) { IMG[k] = v; await IDB.put(k, v); }
+    clearSession();
+    toast('已恢复 ' + n + ' 题，正在刷新…');
+    setTimeout(() => location.reload(), 800);
+  } catch (e) {
+    toast('恢复失败：文件损坏或格式不对');
+  } finally { if (el) el.value = ''; }
+}
+
+function loadSession() {
+  try {
+    const d = JSON.parse(localStorage.getItem(SESS_KEY) || 'null');
+    if (!d || !Array.isArray(d.ids) || !d.ids.length) return null;
+    const list = d.ids.map(id => { const f = findQ(id); return f ? f.q : null; }).filter(Boolean).map(q => {
+      q.images = Array.isArray(q.images) ? q.images : [];
+      q.options = Array.isArray(q.options) ? q.options : [];
+      q.st = q.st || { right: 0, wrong: 0, last: 0 };
+      return q;
+    });
+    if (!list.length) return null;
+    return { ...d, list };
+  } catch (e) { return null; }
+}
+function clearSession() { try { localStorage.removeItem(SESS_KEY); } catch (e) {} }
+
 function startPractice(list, opts) {
   if (opts.random) {
     for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; }
@@ -1921,6 +2029,7 @@ function recordAnswer(correct, picked) {
   else if (correct === false) q.st.wrong++;
   q.st.last = Date.now();
   saveDB();
+  saveSession();
 }
 
 function pick(k) {
@@ -1981,6 +2090,7 @@ function advance() {
   else {
     P.idx++;
     P.picked = null; P.multiSel = []; P.submitted = false; P.revealed = false; P.judged = null; P.correct = null;
+    saveSession();
     render();
   }
 }
@@ -2004,6 +2114,7 @@ function finish() {
   });
   if (DB.logs.length > 300) DB.logs.length = 300;
   saveDB();
+  clearSession();
   S.view = 'result';
   render();
 }
@@ -2464,7 +2575,7 @@ function viewRecite() {
       <button class="ask" data-act="askQ" data-qid="${q.id}" title="这道题有问题？点这里反馈">?</button>
     </div>
     <div class="p-stem">${esc(q.q)}</div>
-    ${q.images.length ? `<div class="q-imgs">${q.images.map(id => IMG[id] ? `<img src="${IMG[id]}" alt="">` : '').join('')}</div>` : ''}
+    ${(q.images||[]).length ? `<div class="q-imgs">${(q.images||[]).map(id => IMG[id] ? `<img src="${IMG[id]}" alt="">` : '').join('')}</div>` : ''}
     ${q.type !== 'short' ? `<div class="d-opts" style="margin-top:14px">${q.options.map(o => `
       <div class="d-opt ${R.revealed && q.answer.indexOf(o.k) > -1 ? 'ans' : ''}"><span class="k">${o.k}</span><span>${esc(o.t)}</span></div>`).join('')}</div>` : ''}
     ${R.revealed ? `
@@ -2984,6 +3095,7 @@ document.addEventListener('click', e => {
       if (P) {
         P.idx = Number(el.dataset.i) || 0;
         P.picked = null; P.multiSel = []; P.submitted = false; P.revealed = false; P.judged = null; P.correct = null;
+        saveSession();
       }
       S.modal = null; render(); break;
     }
@@ -2994,6 +3106,21 @@ document.addEventListener('click', e => {
     case 'reveal': reveal(); break;
     case 'self': selfJudge(Number(el.dataset.ok) === 1); break;
     case 'next': advance(); break;
+    case 'exportAll': exportAllData(); break;
+    case 'pickRestore': { const inp = document.getElementById('restoreFile'); if (inp) inp.click(); break; }
+    case 'resumeSession': {
+      const d = loadSession();
+      if (!d) { toast('没有可继续的练习'); break; }
+      S.practice = {
+        list: d.list, idx: Math.min(d.idx, d.list.length - 1), answers: d.answers || [],
+        picked: null, multiSel: [], submitted: false, revealed: false, judged: null, correct: null,
+        title: d.title, courseId: d.courseId, chapterId: d.chapterId, mode: d.mode
+      };
+      S.view = 'practice';
+      render();
+      break;
+    }
+    case 'dropSession': { clearSession(); toast('已清掉上次进度'); render(); break; }
     case 'exitPractice': {
       const P = S.practice;
       if (P && P.chapterId) { S.view = 'chapter'; S.chapterId = P.chapterId; }
@@ -3275,6 +3402,11 @@ document.addEventListener('change', e => {
   if (e.target.id === 'file') {
     handleFiles(e.target.files);
     e.target.value = '';
+  }
+  if (e.target.id === 'restoreFile') {
+    const f = e.target.files && e.target.files[0];
+    if (f) restoreAllData(f, e.target);
+    return;
   }
   if (e.target.id === 'imgFile') {
     handleImages(e.target.files, S.imgTarget);
