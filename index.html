@@ -2,11 +2,13 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover" />
 <meta name="theme-color" content="#f2f6fd" />
 <title>刷题小站 · by 来一块小饼干</title>
 <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Serif+SC:wght@500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" />
 <style>
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{touch-action:manipulation}
 :root{
   --bg:#f3f7fc;
   --card:#ffffff;
@@ -52,7 +54,7 @@ a{color:var(--accent)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .linkbtn{background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:6px;text-decoration:underline;text-underline-offset:3px}
 .linkbtn.danger{color:#b06a62}
-.input,textarea.input,select.input{width:100%;font-family:inherit;font-size:15px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 13px;outline:none;line-height:1.6}
+.input,textarea.input,select.input{width:100%;font-family:inherit;font-size:16px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 13px;outline:none;line-height:1.6}
 textarea.input{resize:vertical}
 .input:focus{border-color:#8fb4da;box-shadow:0 0 0 3px rgba(47,107,176,.1)}
 .field{margin-bottom:15px}
@@ -182,7 +184,7 @@ textarea.input{resize:vertical}
 .drop p{margin:5px 0 0;font-size:12px;color:var(--muted);line-height:1.6}
 .or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px;margin:18px 0}
 .or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
-textarea#pasteText{min-height:160px;font-size:13.5px;line-height:1.7}
+textarea#pasteText{min-height:160px;font-size:16px;line-height:1.7}
 .fmt{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 16px}
 .fmt summary{cursor:pointer;padding:13px 0;font-size:13.5px;font-weight:500;list-style:none;display:flex;justify-content:space-between;align-items:center}
 .fmt summary::-webkit-details-marker{display:none}
@@ -409,6 +411,9 @@ mark{background:#dbeafc;color:#1c4c86;padding:0 1px;border-radius:2px}
   .sheet{border-radius:20px;margin:auto;max-height:86vh}
   .overlay{align-items:center}
 }
+
+/* 兜底：所有输入控件字号不低于 16px，避免 iOS 聚焦时自动放大页面 */
+input:not([type=checkbox]):not([type=radio]),textarea,select{font-size:16px}
 </style>
 </head>
 <body>
