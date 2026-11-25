@@ -40,7 +40,8 @@ a{color:var(--accent)}
 
 /* ---------- 基础 ---------- */
 .topbar{display:flex;align-items:center;gap:10px;margin:2px 0 16px}
-.topbar h2{font-size:19px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar h2{font-size:19px;flex:0 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.byline-sm{font-size:9.5px;color:var(--muted);white-space:nowrap;flex:0 0 auto;letter-spacing:0}
 .icon-btn{width:38px;height:38px;flex:none;border-radius:50%;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;cursor:pointer;font-size:16px;color:var(--muted);line-height:1;box-shadow:var(--shadow)}
 .icon-btn:active{transform:scale(.94)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 15px;cursor:pointer;font-weight:500;transition:transform .1s,background .2s,color .2s;text-decoration:none;white-space:nowrap}
@@ -83,7 +84,7 @@ textarea.input{resize:vertical}
 /* ---------- 首页 ---------- */
 .hero{margin:8px 0 20px}
 .hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-.byline{display:block;margin-top:3px;font-size:11.5px;font-weight:400;letter-spacing:.02em;color:var(--muted)}
+.byline{display:inline-block;margin-left:9px;font-size:11.5px;font-weight:400;letter-spacing:.02em;color:var(--muted);position:relative;top:-2px}
 .hero-mark{font-family:"Noto Serif SC",serif;font-size:10px;letter-spacing:.3em;color:var(--accent);opacity:.7;margin-bottom:6px}
 .hero h1{font-size:30px;line-height:1.25}
 .profile-pill{display:inline-flex;align-items:center;gap:7px;margin-top:12px;padding:6px 12px 6px 14px;border-radius:22px;background:rgba(255,255,255,.8);border:1px solid var(--line);font-size:13px;color:#3c5165;cursor:pointer}
@@ -856,6 +857,7 @@ function normalizeDB(d) {
   d.courses = Array.isArray(d.courses) ? d.courses : [];
   d.logs = Array.isArray(d.logs) ? d.logs : [];
   d.types = Array.isArray(d.types) ? d.types : [];
+  d.papers = Array.isArray(d.papers) ? d.papers : [];
   d.courses.forEach(c => {
     c.id = c.id || uid();
     c.major = c.major || '未分类';
@@ -1043,6 +1045,7 @@ function render() {
   else if (S.view === 'paper') html = viewPaper();
   else if (S.view === 'recite') html = viewRecite();
   else if (S.view === 'cover') html = viewCover();
+  html = html.replace(/<div class="topbar">[\s\S]*?<\/h2>/g, m => m + '<span class="byline-sm">（by 来一块小饼干）</span><span style="flex:1;min-width:0"></span>');
   $('#app').innerHTML = html + (S.modal ? viewModal() : '') + '<div id="toast" class="toast"></div>';
   if (S.draftQ) mountDraft();
   if (S.lastView !== S.view) {
@@ -1947,6 +1950,20 @@ function viewModal() {
     body = `<h3>移到哪个文件夹</h3><p class="hint">留空就是“未分组”。</p>
       <div class="field"><label class="field-label">文件夹名</label><input class="input" id="mfoName" value="${esc(f && f.ch.folder ? f.ch.folder : '')}" placeholder="填新名字或留空" /></div>
       <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button><button class="btn primary" data-act="modalOk">移动</button></div>`;
+  } else if (m.type === 'coverReset') {
+    body = `<h3>全部清零？</h3><p class="hint">这 ${m.n} 道题的对错记录会全部清空，题号盘回到全白，错题本里对应的题也没了。题目和解析不会删。</p>
+      <div class="modal-actions"><button class="btn" data-act="modalClose">不是</button><button class="btn primary" data-act="coverResetOk" style="background:var(--red);border-color:var(--red)">是，全部清零</button></div>`;
+  } else if (m.type === 'papermenu') {
+    const pr = (DB.papers || []).find(x => x.id === m.id);
+    body = `<h3>${esc(pr ? (pr.name || '这套卷') : '这套卷')}</h3><p class="hint">${pr ? ((pr.qids || []).length + ' 题 · ' + pdate(pr.ts)) : ''}</p>
+      <div style="margin:12px 0">
+        <button class="btn" data-act="renamePaperAsk" data-id="${m.id}" style="width:100%;margin-bottom:8px">重命名</button>
+        <button class="btn" data-act="delPaper" data-id="${m.id}" style="width:100%;color:var(--red);border-color:#eccfca">删除这条记录</button>
+      </div>
+      <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button></div>`;
+  } else if (m.type === 'renamePaper') {
+    body = `<h3>重命名这套卷</h3><div class="field" style="margin-top:12px"><input class="input" id="mprName" value="${esc(m.value || '')}" /></div>
+      <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button><button class="btn primary" data-act="modalOk">保存</button></div>`;
   } else if (m.type === 'renameFolder') {
     body = `<h3>重命名文件夹</h3><div class="field" style="margin-top:12px"><input class="input" id="mfoName" value="${esc(m.name)}" /></div>
       <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button><button class="btn primary" data-act="modalOk">保存</button></div>`;
@@ -2554,15 +2571,16 @@ function viewCover() {
 
   ${list.length ? `<div class="qn-grid">${list.map((q, i) => {
     const w = (q.st || {}).wrong || 0, r = (q.st || {}).right || 0;
-    const cls = r >= 3 ? 'ok' : (w > 0 || r > 0 ? 'no' : '');
-    const greenDeg = r <= 1 ? 0 : (r >= 3 ? 360 : 180);
+    const cls = w > 0 ? (r >= 3 ? 'ok' : 'no') : (r > 0 ? 'ok' : '');
+    const greenDeg = w > 0 ? (r >= 3 ? 360 : Math.round(r / 3 * 360)) : (r > 0 ? 360 : 0);
     const bg = greenDeg >= 360 ? '#d7ecdf'
       : greenDeg > 0 ? `conic-gradient(#a9d8bf ${greenDeg}deg, #fbeceb ${greenDeg}deg 360deg)`
       : ((r > 0 || w > 0) ? '#fbeceb' : '#ffffff');
     const border = greenDeg >= 360 ? 'border-color:#7fb99b' : ((r > 0 || w > 0) ? 'border-color:#e2b0ab' : '');
     return `<button class="qn ${cls}" style="background:${bg};${border}" data-act="coverJump" data-i="${i}"><span class="qn-n">${i + 1}</span>${(r || w) ? `<span class="qn-sub">✓${r} ✕${w}</span>` : ''}</button>`;
   }).join('')}</div>
-  <div class="legend"><span><i></i>没做过</span><span><i class="ok"></i>做对过</span><span><i class="no"></i>做错过</span><span>圈内 ✓做对几次 ✕做错几次</span><span style="margin-left:auto">做对一次仍红，两次半绿，三次整圈绿</span></div>`
+  <div class="legend"><span><i></i>没做过</span><span><i class="ok"></i>做对过</span><span><i class="no"></i>做错过</span><span>圈内 ✓对几次 ✕错几次</span><span style="margin-left:auto">做对整圈绿；做错过的地方做对一次补 1/3 绿，三次补满</span></div>
+  <div style="margin-top:14px"><button class="btn block" data-act="coverReset" style="color:var(--red);border-color:#eccfca;font-size:13px">一键重做（清空这套的做题记录）</button></div>`
   : `<div class="empty" style="padding:34px 10px"><p>这个筛选下没有题</p></div>`}
 
   <div class="p-foot" style="margin-top:18px">
@@ -2702,7 +2720,7 @@ function viewPaper() {
   </div>
 
   <div class="paper-card">
-    <div class="paper-label">题型比例</div>
+    <div class="paper-label" style="display:flex;align-items:center;gap:8px">题型比例<span style="margin-left:auto;color:#98adc0">点数字可改数量</span></div>
     <div class="seg">
       ${shares.map(([label, v]) => `<button data-act="paperShare" data-v="${v}" class="${Math.abs(Number(ps.share) - v) < 0.01 ? 'on' : ''}">${label}</button>`).join('')}
     </div>
@@ -2726,6 +2744,18 @@ function viewPaper() {
       </div>
     </div>
     <div class="paper-hint">范围：<b>${esc(paperScopeTitle())}</b> · 打乱顺序</div>
+  </div>
+
+  <div class="paper-card">
+    <div class="paper-label" style="display:flex;align-items:center;gap:8px">我组过的题<span style="margin-left:auto;color:#98adc0">${(DB.papers || []).length ? '长按可改名' : ''}</span></div>
+    ${(DB.papers || []).length ? [...(DB.papers || [])].reverse().slice(0, 12).map(pr => `
+      <div data-paper="${pr.id}" data-act="redoPaper" data-id="${pr.id}" style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #eff2f6">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(pr.name || ((Number(pr.objN) || 0) + (Number(pr.subN) || 0)) + ' 题 · ' + (pr.scope || ''))}</div>
+          <div style="font-size:11.5px;color:#98adc0">${(Number(pr.objN) || 0) + (Number(pr.subN) || 0)} 题 · ${esc(pr.scope || '')} · ${pdate(pr.ts)}</div>
+        </div>
+        <span style="font-size:12.5px;color:#2f6fb2;white-space:nowrap">再做 ›</span>
+      </div>`).join('') : '<div class="paper-hint">还没组过卷。上面选好题数，点下面的按钮就是一套。</div>'}
   </div>
 
   <div class="sticky-foot">
@@ -2763,10 +2793,38 @@ function paperOpts() {
   };
 }
 
+function pdate(ts) {
+  const d = new Date(ts || Date.now());
+  const p2 = n => (n < 10 ? '0' : '') + n;
+  return (d.getMonth() + 1) + '-' + p2(d.getDate()) + ' ' + p2(d.getHours()) + ':' + p2(d.getMinutes());
+}
+
+function openPaperRec(id) {
+  const rec = (DB.papers || []).find(p => p.id === id);
+  if (!rec) { toast('找不到这套卷'); return; }
+  const list = (rec.qids || []).map(qid => { const f = findQ(qid); return f ? f.q : null; }).filter(Boolean);
+  if (!list.length) { toast('这套里的题都被删掉了'); return; }
+  if (list.length < rec.qids.length) toast('有 ' + (rec.qids.length - list.length) + ' 题已删，按现有 ' + list.length + ' 题做');
+  startPractice(list, { title: '组卷 · ' + list.length + ' 题', mode: 'paper' });
+}
+
+function delPaperRec(id) {
+  DB.papers = (DB.papers || []).filter(p => p.id !== id);
+  S.modal = null;
+  saveDB(); render(); toast('已删除这条记录');
+}
+
 function genPaper() {
   const list = buildPaperList();
   if (!list.length) { toast('这个范围里没有题目'); return; }
   const o = paperOpts();
+  const ps = paperState();
+  DB.papers = (DB.papers || []).concat([{
+    id: 'pr' + Date.now(), ts: Date.now(), name: '组卷 · ' + list.length + ' 题', scope: paperScopeTitle(),
+    objN: list.filter(q => isObj(q)).length, subN: list.filter(q => !isObj(q)).length,
+    qids: list.map(q => q.id)
+  }]).slice(-30);
+  saveDB();
   startPractice(list, { title: '组卷 · ' + list.length + ' 题', mode: 'paper', courseId: o.courseId, chapterId: o.chapterId });
 }
 
@@ -3438,6 +3496,25 @@ document.addEventListener('click', e => {
     case 'coverFilter': { S.cover.filter = el.dataset.f; render(); break; }
     case 'coverOrder': { S.cover.order = el.dataset.v === 'random' ? 'random' : 'seq'; render(); break; }
     case 'coverStart': startFromCover(-1); break;
+    case 'coverReset': {
+      const C = S.cover;
+      if (!C) break;
+      S.modal = { type: 'coverReset', n: C.base.length };
+      render(); break;
+    }
+    case 'coverResetOk': {
+      const C = S.cover;
+      if (C) {
+        const ids = new Set(C.base.map(q => q.id));
+        DB.courses.forEach(c => (c.chapters || []).forEach(ch => (ch.questions || []).forEach(q => {
+          if (ids.has(q.id)) q.st = { right: 0, wrong: 0, last: 0 };
+        })));
+        C.base.forEach(q => { q.st = { right: 0, wrong: 0, last: 0 }; });
+        saveDB();
+      }
+      S.modal = null; render(); toast('已全部清零');
+      break;
+    }
     case 'coverJump': startFromCover(Number(el.dataset.i) || 0); break;
     case 'coverClose': {
       const C = S.cover;
@@ -3495,6 +3572,14 @@ document.addEventListener('click', e => {
     case 'paperObjN': { const ps = paperState(); ps.objN = Math.max(0, Number(el.value) || 0); render(); break; }
     case 'paperSubN': { const ps = paperState(); ps.subN = Math.max(0, Number(el.value) || 0); render(); break; }
     case 'genPaper': genPaper(); break;
+    case 'redoPaper': openPaperRec(el.dataset.id); break;
+    case 'delPaper': delPaperRec(el.dataset.id); break;
+    case 'renamePaperAsk': {
+      const pr = (DB.papers || []).find(x => x.id === el.dataset.id);
+      S.holdAt = Date.now();
+      S.modal = { type: 'renamePaper', id: el.dataset.id, value: pr ? (pr.name || '') : '' };
+      render(); break;
+    }
     case 'recitePaper': recitePaper(); break;
     case 'exportPaper': exportPaper(el.dataset.exp === '1'); break;
     case 'reciteChapter': {
@@ -3692,6 +3777,11 @@ function modalOk() {
     if (c.folders.includes(v) || c.chapters.some(ch => ch.folder === v)) { toast('已经有同名文件夹'); return; }
     c.folders.push(v); saveDB();
     S.modal = null; render(); toast('已新建文件夹「' + v + '」');
+  } else if (m.type === 'renamePaper') {
+    const v = ($('#mprName') || {}).value.trim();
+    const pr = (DB.papers || []).find(x => x.id === m.id);
+    if (pr && v) { pr.name = v; saveDB(); toast('已改名 ' + v); }
+    S.modal = null; render();
   } else if (m.type === 'moveCh') {
     const f = getChapter(m.id);
     if (f) {
@@ -4051,6 +4141,29 @@ document.addEventListener('pointerdown', e => {
 document.addEventListener('pointermove', e => {
   if (!chStart) return;
   if (Math.abs(e.clientX - chStart.x) > 8 || Math.abs(e.clientY - chStart.y) > 8) { clearTimeout(chTimer); chStart = null; }
+});
+
+/* 组卷记录长按删除 */
+let prTimer = null, prStart = null;
+document.addEventListener('pointerdown', e => {
+  const row = e.target.closest('[data-paper]');
+  if (!row) return;
+  prStart = { x: e.clientX, y: e.clientY, id: row.dataset.paper };
+  clearTimeout(prTimer);
+  prTimer = setTimeout(() => {
+    const st = prStart; prStart = null;
+    if (!st) return;
+    S.holdAt = Date.now();
+    S.modal = { type: 'papermenu', id: st.id };
+    render();
+  }, 520);
+});
+['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => {
+  document.addEventListener(ev, () => { clearTimeout(prTimer); prStart = null; }, true);
+});
+document.addEventListener('pointermove', e => {
+  if (!prStart) return;
+  if (Math.abs(e.clientX - prStart.x) > 8 || Math.abs(e.clientY - prStart.y) > 8) { clearTimeout(prTimer); prStart = null; }
 });
 
 /* 做题页长按：选项=排除，题干=标记条，卡片空白=收藏 */
