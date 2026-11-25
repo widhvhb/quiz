@@ -251,6 +251,25 @@ textarea#pasteText{min-height:160px;font-size:16px;line-height:1.7}
 .ask-note{font-size:11.5px;color:var(--muted);line-height:1.6;margin-top:12px;border-top:1px dashed #e4ebf3;padding-top:9px}
 .tag.issue{background:#fdf3e2;color:#a9762a;border:1px solid #eed9b6}
 .hl{background:transparent}
+.exp-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.exp-edit{margin-left:auto;font-size:11px;color:var(--accent);background:#f4f9ff;border:1px solid #d9e8f7;border-radius:7px;padding:3px 7px;cursor:pointer}
+.ask.on{background:#fff6dc;border-color:#f0d68a;color:#b8862a}
+.mk-hl{background:#ffeaa0;border-radius:3px;padding:0 1px}
+.mk-ul{text-decoration:underline;text-decoration-color:#e0675c;text-decoration-thickness:2px;text-underline-offset:3px}
+.mk-circle{box-shadow:inset 0 0 0 1.6px #e0675c;border-radius:10px;padding:0 3px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.mk-hl-ul{background:#ffeaa0;text-decoration:underline;text-decoration-color:#e0675c;text-decoration-thickness:2px;text-underline-offset:3px;border-radius:3px;padding:0 1px}
+.mk-hl-circle{background:#ffeaa0;box-shadow:inset 0 0 0 1.6px #e0675c;border-radius:10px;padding:0 3px}
+.mk-ul-circle{text-decoration:underline;text-decoration-color:#e0675c;text-decoration-thickness:2px;text-underline-offset:3px;box-shadow:inset 0 0 0 1.6px #e0675c;border-radius:10px;padding:0 3px}
+.mk-hl-ul-circle{background:#ffeaa0;text-decoration:underline;text-decoration-color:#e0675c;text-decoration-thickness:2px;text-underline-offset:3px;box-shadow:inset 0 0 0 1.6px #e0675c;border-radius:10px;padding:0 3px}
+.opt.excl{opacity:.55;border-style:dashed}
+.opt.excl .txt{text-decoration:line-through;text-decoration-color:#9db0c2}
+.opt.excl .key{background:#eef2f7;color:#8fa3b6}
+.mark-bar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:9px 0 0;padding:8px 10px;background:#fff;border:1px solid #e4edf6;border-radius:11px;box-shadow:0 4px 14px rgba(40,80,120,.08);font-size:12px;color:var(--muted)}
+.mark-bar button{height:27px;padding:0 10px;border-radius:8px;border:1px solid #e0e9f2;background:#fbfdff;font-size:12px;cursor:pointer;color:#41596e}
+.mark-bar button.hl{background:#ffeaa0;border-color:#f2dc86}
+.mark-bar button.ul{text-decoration:underline;text-decoration-color:#e0675c;text-decoration-thickness:2px}
+.mark-bar button.circle{box-shadow:inset 0 0 0 1.5px #e0675c;border-radius:9px}
+.mark-bar .x{margin-left:auto;color:#9bafc1;background:none;border:none;font-size:14px}
 .hl-y{background:#ffe9a6;border-radius:3px;box-decoration-break:clone;padding:0 1px}
 .hl-r{background:#ffd4cf;border-radius:3px;box-decoration-break:clone;padding:0 1px}
 .hl-b{background:#cfe4ff;border-radius:3px;box-decoration-break:clone;padding:0 1px}
@@ -436,6 +455,30 @@ input:not([type=checkbox]):not([type=radio]),textarea,select{font-size:16px}
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* 题干标记：高光 / 下划线 / 圈（可叠加） */
+function stemHTML(text, marks) {
+  const t = String(text == null ? '' : text);
+  const n = t.length;
+  if (!marks || !marks.length) return esc(t);
+  const ks = new Array(n).fill('');
+  marks.forEach(m => {
+    const a = Math.max(0, Math.min(Number(m.s) || 0, n));
+    const b = Math.max(0, Math.min(Number(m.e) || 0, n));
+    const k = m.k === 'ul' ? 'ul' : m.k === 'circle' ? 'circle' : 'hl';
+    for (let i = a; i < b; i++) if (ks[i].indexOf(k) < 0) ks[i] = ks[i] ? ks[i] + '-' + k : k;
+  });
+  let out = '', buf = '', cur = '';
+  for (let i = 0; i < n; i++) {
+    if (ks[i] !== cur) {
+      if (buf) out += cur ? `<span class="mk mk-${cur}">${esc(buf)}</span>` : esc(buf);
+      buf = ''; cur = ks[i];
+    }
+    buf += t[i];
+  }
+  if (buf) out += cur ? `<span class="mk mk-${cur}">${esc(buf)}</span>` : esc(buf);
+  return out;
+}
 
 /* 解析高光：把 [{s,e,c}] 套到文本上 */
 function expHTML(text, hl) {
@@ -797,6 +840,7 @@ function normalizeDB(d) {
         q.fav = !!q.fav;
         q.issue = q.issue || null;
         q.hl = Array.isArray(q.hl) ? q.hl : [];
+        q.marks = Array.isArray(q.marks) ? q.marks : [];
       });
     });
   });
@@ -1226,7 +1270,7 @@ function viewQDetail() {
     <span class="muted" style="font-size:11.5px;margin-left:auto">做过 ${st.right + st.wrong} 次 · ${st.right} 对 ${st.wrong} 错</span>
     <button class="ask" data-act="askQ" data-qid="${q.id}" title="这道题有问题？点这里反馈">?</button>
   </div>
-  <div class="q-stem-detail">${esc(q.q)}</div>
+  <div class="q-stem-detail">${stemHTML(q.q, q.marks)}</div>
   ${(q.images||[]).length ? `<div class="q-imgs">${(q.images||[]).map(id => IMG[id] ? `<img src="${IMG[id]}" alt="">` : '').join('')}</div>` : ''}
   ${q.type !== 'short' ? `<div class="d-opts">${q.options.map(o => `
     <div class="d-opt ${q.answer.indexOf(o.k) > -1 ? 'ans' : ''}"><span class="k">${o.k}</span><span>${esc(o.t)}</span></div>`).join('')}</div>
@@ -1234,6 +1278,8 @@ function viewQDetail() {
   ${q.issue ? `<div class="issue-panel"><div class="lbl"><span>已反馈：${issueLabels(q.issue)}</span><button data-act="askQ" data-qid="${q.id}">修改</button></div>${q.issue.note ? esc(q.issue.note) : '（没有写备注）'}</div>` : ''}
   <div class="exp-block"><div class="lbl"><span>${q.type === 'short' ? '参考答案 / 解析' : '解析'}</span><button data-act="editExp" data-qid="${q.id}">修改</button></div>${q.exp ? expHTML(q.exp, q.hl) : '<span class="muted">还没有解析，点“修改”补上。</span>'}</div>
   <div class="q-actions">
+    <button class="btn" data-act="qdNav" data-d="-1">‹ 上一题</button>
+    <button class="btn" data-act="qdNav" data-d="1">下一题 ›</button>
     <button class="btn primary" data-act="practiceOne" data-qid="${q.id}">练这道题</button>
     <button class="btn" data-act="toggleFav" data-qid="${q.id}">${q.fav ? '★ 取消收藏' : '☆ 收藏'}</button>
     <button class="btn" data-act="addImg" data-qid="${q.id}">＋ 加图片</button>
@@ -1441,15 +1487,15 @@ function viewPractice() {
   </div>
   <div class="bar"><i style="width:${clamp(pct, 3, 100)}%"></i></div>
 
-  <div class="q-main" data-favq="${q.id}">
+  <div class="q-main">
     <div class="q-type-row">
       <span class="tag ${qClass(q)}">${qLabel(q)}</span>
-      ${q.fav ? '<span class="tag fav">★ 收藏</span>' : ''}
       ${q.type === 'multi' ? '<span class="tag ghost">可以多选</span>' : ''}
       <span class="idx">第 ${P.idx + 1} 题</span>
+      <button class="ask ${q.fav ? 'on' : ''}" data-act="favQ" data-qid="${q.id}" title="${q.fav ? '取消收藏' : '收藏这道题'}">${q.fav ? '★' : '☆'}</button>
       <button class="ask" data-act="askQ" data-qid="${q.id}" title="这道题有问题？点这里反馈">?</button>
     </div>
-    <div class="p-stem">${esc(q.q)}</div>
+    <div class="p-stem" data-stemq="${q.id}">${stemHTML(q.q, q.marks)}</div>
     ${(q.images||[]).length ? `<div class="q-imgs">${(q.images||[]).map(id => IMG[id] ? `<img src="${IMG[id]}" alt="">` : '').join('')}</div>` : ''}
     ${renderAnswerArea(q, P)}
     ${renderFeedback(q, P)}
@@ -1464,7 +1510,7 @@ function renderAnswerArea(q, P) {
       return `<div class="opts"><div class="short-box">简答题不设选项，先在心里组织答案，再对照参考答案自评。</div>
         <div style="margin-top:10px"><button class="btn block" data-act="reveal">显示参考答案</button></div></div>`;
     }
-    return `<div class="opts"><div class="short-box"><b>参考答案</b><br />${q.exp ? expHTML(q.exp, q.hl) : '这道题还没有参考答案。'}</div></div>`;
+    return `<div class="opts"><div class="short-box"><div class="exp-head"><b>参考答案</b><button class="exp-edit" data-act="editExp" data-qid="${q.id}">改答案 / 标重点</button></div>${q.exp ? expHTML(q.exp, q.hl) : '这道题还没有参考答案。'}</div></div>`;
   }
   const multi = q.type === 'multi';
   return `<div class="opts">
@@ -1476,6 +1522,8 @@ function renderAnswerArea(q, P) {
 function optBtn(o, q, P) {
   let cls = 'opt';
   const answered = P.picked !== null || P.submitted;
+  const ex = P.excl && P.excl[o.k];
+  if (ex) cls += ' excl';
   if (!answered && q.type === 'multi' && P.multiSel.indexOf(o.k) > -1) cls += ' sel';
   if (answered) {
     if (q.answer.indexOf(o.k) > -1) cls += ' correct';
@@ -1497,30 +1545,32 @@ function renderFeedback(q, P) {
     }
     return '';
   }
-  if (!q.answer) return `<div class="fb note">这道题还没有设置答案，看完解析继续。</div>${q.exp ? `<div class="exp"><span class="exp-label">解析</span>${expHTML(q.exp, q.hl)}</div>` : ''}`;
+  const expHead = `<div class="exp-head"><span class="exp-label">解析</span><button class="exp-edit" data-act="editExp" data-qid="${q.id}">改解析 / 标重点</button></div>`;
+  if (!q.answer) return `<div class="fb note">这道题还没有设置答案，看完解析继续。</div>${q.exp ? `<div class="exp">${expHead}${expHTML(q.exp, q.hl)}</div>` : `<div class="exp">${expHead}这道题还没有解析。</div>`}`;
   if (P.picked === null && !P.submitted) return '';
   if (P.correct === true) return '<div class="fb ok">✓ 回答正确，继续下一题</div>';
   return `<div class="fb bad">
     <div class="fb-title">✕ 回答错误</div>
     <div class="fb-row">正确答案 <b>${esc(answerText(q))}</b>${P.picked ? ` · 你选了 <b>${esc(P.picked)}</b>` : ''}</div>
-    <div class="exp"><span class="exp-label">解析</span>${q.exp ? expHTML(q.exp, q.hl) : '这道题还没有解析。'}</div>
+    <div class="exp">${expHead}${q.exp ? expHTML(q.exp, q.hl) : '这道题还没有解析。'}</div>
   </div>`;
 }
 
 function practiceFoot(q, P) {
   const total = P.list.length;
   const isLast = P.idx + 1 === total;
+  const prev = `<button class="btn small" data-act="prevQ" ${P.idx === 0 ? 'disabled' : ''}>‹ 上一题</button>`;
   if (q.type === 'short') {
-    if (!P.revealed) return `<div class="p-foot"><button class="skip" data-act="next">跳过这题 ›</button></div>`;
+    if (!P.revealed) return `<div class="p-foot">${prev}<button class="skip" data-act="next">跳过这题 ›</button></div>`;
     if (P.judged === null) return '';
-    return `<div class="p-foot"><button class="btn primary" data-act="next">${isLast ? '看结果' : '下一题'} →</button></div>`;
+    return `<div class="p-foot">${prev}<button class="btn primary" data-act="next">${isLast ? '看结果' : '下一题'} →</button></div>`;
   }
   if (q.type === 'multi' && !P.submitted && !P.picked) {
-    return `<div class="p-foot"><button class="skip" data-act="next">跳过</button><button class="btn primary" data-act="submitMulti">提交答案</button></div>`;
+    return `<div class="p-foot">${prev}<button class="skip" data-act="next">跳过</button><button class="btn primary" data-act="submitMulti">提交答案</button></div>`;
   }
-  if (P.picked === null) return `<div class="p-foot"><button class="skip" data-act="next">跳过这题 ›</button></div>`;
-  if (P.correct === true) return '<div class="p-foot"></div>';
-  return `<div class="p-foot"><button class="btn primary" data-act="next">${isLast ? '看结果' : '下一题'} →</button></div>`;
+  if (P.picked === null) return `<div class="p-foot">${prev}<button class="skip" data-act="next">跳过这题 ›</button></div>`;
+  if (P.correct === true) return `<div class="p-foot">${prev}<button class="btn primary" data-act="next">${isLast ? '看结果' : '下一题'} →</button></div>`;
+  return `<div class="p-foot">${prev}<button class="btn primary" data-act="next">${isLast ? '看结果' : '下一题'} →</button></div>`;
 }
 
 /* ---------- 结果 ---------- */
@@ -1774,8 +1824,18 @@ function viewModal() {
     body = `<h3>删除这道题？</h3><p class="hint">${esc((m.q || {}).q || '')}</p>
       <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button><button class="btn primary" data-act="modalOk" style="background:var(--red);border-color:var(--red)">删除</button></div>`;
   } else if (m.type === 'editExp') {
-    body = `<h3>修改解析</h3><p class="hint">客观题写解析，简答题写参考答案，随时能改。</p>
-      <div class="field"><textarea class="input" id="mExp" rows="6">${esc(m.exp)}</textarea></div>
+    const q = m.q || {};
+    body = `<h3>修改${q.type === 'short' ? '参考答案' : '解析'}</h3><p class="hint">可以改文字，也可以选中下面的预览里的文字加黄/红/蓝高光。</p>
+      <div class="field"><textarea class="input" id="mExp" rows="5">${esc(q.exp)}</textarea>
+        <div class="hl-tools">
+          <span class="t">选中下面文字，点颜色标重点</span>
+          <button type="button" class="hlbtn y" data-act="hlColor" data-c="y"><i></i>黄</button>
+          <button type="button" class="hlbtn r" data-act="hlColor" data-c="r"><i></i>红</button>
+          <button type="button" class="hlbtn b" data-act="hlColor" data-c="b"><i></i>蓝</button>
+          <button type="button" class="hlbtn clear" data-act="hlClear">清除高光</button>
+        </div>
+        <div class="hl-preview" id="hlPreview">${q.exp ? expHTML(q.exp, q.hl) : '<span class="muted">（还空着）</span>'}</div>
+      </div>
       <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button><button class="btn primary" data-act="modalOk">保存</button></div>`;
   } else if (m.type === 'issue') {
     const kinds = m.kinds || [];
@@ -1998,6 +2058,7 @@ function loadSession() {
     const list = d.ids.map(id => { const f = findQ(id); return f ? f.q : null; }).filter(Boolean).map(q => {
       q.images = Array.isArray(q.images) ? q.images : [];
       q.options = Array.isArray(q.options) ? q.options : [];
+      q.marks = Array.isArray(q.marks) ? q.marks : [];
       q.st = q.st || { right: 0, wrong: 0, last: 0 };
       return q;
     });
@@ -2035,6 +2096,7 @@ function recordAnswer(correct, picked) {
 function pick(k) {
   const P = S.practice, q = curQ();
   if (!P || P.picked !== null || P.submitted) return;
+  if (P.excl && P.excl[k]) { toast('这个选项被你排除了，长按选项可恢复'); return; }
   if (!q) return;
   if (q.type === 'multi') {
     const i = P.multiSel.indexOf(k);
@@ -2572,9 +2634,10 @@ function viewRecite() {
     <div class="q-type-row">
       <span class="tag ${qClass(q)}">${qLabel(q)}</span>
       <span class="idx">第 ${R.idx + 1} 题</span>
+      <button class="ask ${q.fav ? 'on' : ''}" data-act="favQ" data-qid="${q.id}" title="收藏">${q.fav ? '★' : '☆'}</button>
       <button class="ask" data-act="askQ" data-qid="${q.id}" title="这道题有问题？点这里反馈">?</button>
     </div>
-    <div class="p-stem">${esc(q.q)}</div>
+    <div class="p-stem">${stemHTML(q.q, q.marks)}</div>
     ${(q.images||[]).length ? `<div class="q-imgs">${(q.images||[]).map(id => IMG[id] ? `<img src="${IMG[id]}" alt="">` : '').join('')}</div>` : ''}
     ${q.type !== 'short' ? `<div class="d-opts" style="margin-top:14px">${q.options.map(o => `
       <div class="d-opt ${R.revealed && q.answer.indexOf(o.k) > -1 ? 'ans' : ''}"><span class="k">${o.k}</span><span>${esc(o.t)}</span></div>`).join('')}</div>` : ''}
@@ -2630,7 +2693,7 @@ function openEditQ(q, isNew, ctx) {
 
 function collectEditor() {
   const m = S.modal;
-  if (!m || m.type !== 'editQ') return;
+  if (!m || (m.type !== 'editQ' && m.type !== 'editExp')) return;
   const q = m.q;
   const body = $('#mQ');
   if (body) q.q = body.value;
@@ -2655,7 +2718,7 @@ function normalizeQ(q) {
 
 function saveEditor() {
   const m = S.modal;
-  if (!m || m.type !== 'editQ') return;
+  if (!m || (m.type !== 'editQ' && m.type !== 'editExp')) return;
   collectEditor();
   const q = normalizeQ(m.q);
   q.q = q.q.trim();
@@ -2821,7 +2884,7 @@ document.addEventListener('click', e => {
     }
     case 'editExp': {
       const f = findQ(el.dataset.qid);
-      if (f) { S.modal = { type: 'editExp', qid: f.q.id, exp: f.q.exp }; render(); }
+      if (f) { S.modal = { type: 'editExp', qid: f.q.id, exp: f.q.exp, q: f.q }; render(); }
       break;
     }
     case 'addImg': {
@@ -2934,7 +2997,7 @@ document.addEventListener('click', e => {
     }
     case 'hlColor': {
       const m = S.modal;
-      if (!m || m.type !== 'editQ') break;
+      if (!m || (m.type !== 'editQ' && m.type !== 'editExp')) break;
       const ta = $('#mExp');
       if (ta) m.q.exp = ta.value;
       if (!hlSel || hlSel.e <= hlSel.s) { toast('先用手指按住选中要标重点的文字'); break; }
@@ -2945,7 +3008,7 @@ document.addEventListener('click', e => {
     }
     case 'hlClear': {
       const m = S.modal;
-      if (!m || m.type !== 'editQ') break;
+      if (!m || (m.type !== 'editQ' && m.type !== 'editExp')) break;
       m.q.hl = [];
       refreshHLPreview();
       toast('高光已清除');
@@ -3106,6 +3169,49 @@ document.addEventListener('click', e => {
     case 'reveal': reveal(); break;
     case 'self': selfJudge(Number(el.dataset.ok) === 1); break;
     case 'next': advance(); break;
+    case 'qdNav': {
+      const f = findQ(S.qid);
+      if (!f) break;
+      const i = f.ch.questions.findIndex(x => x.id === f.q.id);
+      const j = i + (Number(el.dataset.d) || 0);
+      if (j < 0) { toast('已是本章第一题'); break; }
+      if (j >= f.ch.questions.length) { toast('已是本章最后一题'); break; }
+      S.qid = f.ch.questions[j].id;
+      S.view = 'qdetail';
+      render();
+      break;
+    }
+    case 'prevQ': {
+      const P = S.practice;
+      if (!P || P.idx === 0) break;
+      P.idx--;
+      P.picked = null; P.multiSel = []; P.submitted = false; P.revealed = false; P.judged = null; P.correct = null;
+      removeMarkBar(); saveSession(); render();
+      break;
+    }
+    case 'favQ': { toggleFav(el.dataset.qid); break; }
+    case 'toggleExcl': {
+      const P = S.practice; if (!P) break;
+      P.excl = P.excl || {};
+      const k = el.dataset.k;
+      P.excl[k] = !P.excl[k];
+      render();
+      toast(P.excl[k] ? '已排除 ' + k : '已恢复 ' + k);
+      break;
+    }
+    case 'markSel': {
+      const ms = S.markSel;
+      if (!ms) { toast('先选中要标记的文字'); break; }
+      const f = findQ(ms.qid);
+      if (!f) break;
+      f.q.marks = (f.q.marks || []);
+      f.q.marks.push({ s: ms.s, e: ms.e, k: el.dataset.k });
+      saveDB();
+      removeMarkBar();
+      render();
+      break;
+    }
+    case 'markClose': removeMarkBar(); break;
     case 'exportAll': exportAllData(); break;
     case 'pickRestore': { const inp = document.getElementById('restoreFile'); if (inp) inp.click(); break; }
     case 'resumeSession': {
@@ -3247,7 +3353,11 @@ function modalOk() {
   } else if (m.type === 'editExp') {
     const v = ($('#mExp') || {}).value;
     const f = findQ(m.qid);
-    if (f) { f.q.exp = v.trim(); saveDB(); toast('解析已更新'); }
+    if (f) {
+      f.q.exp = v.trim();
+      f.q.hl = (m.q && m.q.hl || []).map(h => ({ s: Math.max(0, Math.min(h.s, f.q.exp.length)), e: Math.max(0, Math.min(h.e, f.q.exp.length)), c: h.c })).filter(h => h.e > h.s);
+      saveDB(); toast('解析已更新');
+    }
     S.modal = null; render();
   } else if (m.type === 'newType') {
     const name = ($('#ntName') || {}).value.trim();
@@ -3318,7 +3428,7 @@ function refreshHLPreview() {
   const m = S.modal;
   const pv = document.getElementById('hlPreview');
   const ta = document.getElementById('mExp');
-  if (!pv || !m || m.type !== 'editQ') return;
+  if (!pv || !m || (m.type !== 'editQ' && m.type !== 'editExp')) return;
   const text = ta ? ta.value : m.q.exp;
   const hl = (m.q.hl || []).filter(h => h.e <= text.length);
   pv.innerHTML = text ? expHTML(text, hl) : '<span class="muted">（解析还空着）</span>';
@@ -3326,7 +3436,7 @@ function refreshHLPreview() {
 }
 document.addEventListener('selectionchange', () => {
   const m = S.modal;
-  if (!m || m.type !== 'editQ') return;
+  if (!m || (m.type !== 'editQ' && m.type !== 'editExp')) return;
   const pv = document.getElementById('hlPreview');
   const sel = window.getSelection();
   if (!pv || !sel || !sel.rangeCount || sel.isCollapsed) return;
@@ -3340,8 +3450,32 @@ document.addEventListener('selectionchange', () => {
   if (len > 0) hlSel = { s: s0, e: s0 + len };
 });
 
+/* 题干标记条 */
+function removeMarkBar() {
+  const b = document.getElementById('markBar');
+  if (b) b.remove();
+  S.markSel = null;
+}
+function showMarkBar(qid) {
+  removeMarkBar();
+  const stem = document.querySelector('.p-stem');
+  if (!stem) return;
+  const bar = document.createElement('div');
+  bar.id = 'markBar';
+  bar.className = 'mark-bar';
+  bar.innerHTML = '<span>选中文字后点样式</span>'
+    + '<button class="hl" data-act="markSel" data-k="hl">高光</button>'
+    + '<button class="ul" data-act="markSel" data-k="ul">横线</button>'
+    + '<button class="circle" data-act="markSel" data-k="circle">圈圈</button>'
+    + '<button class="x" data-act="markClose">×</button>';
+  stem.parentNode.insertBefore(bar, stem.nextSibling);
+}
+
 /* 长按收藏 */
-document.addEventListener('contextmenu', e => { if (e.target.closest('[data-favq]')) e.preventDefault(); });
+document.addEventListener('contextmenu', e => {
+  if (e.target.closest('[data-favq]')) e.preventDefault();
+  if (e.target.closest('.p-stem')) e.preventDefault();
+});
 let favTimer = null, favStart = null;
 function toggleFav(qid) {
   const f = findQ(qid);
@@ -3371,6 +3505,59 @@ document.addEventListener('pointermove', e => {
   if (Math.abs(e.clientX - favStart.x) > 8 || Math.abs(e.clientY - favStart.y) > 8) { clearTimeout(favTimer); favStart = null; }
 });
 
+/* 做题页长按：选项=排除，题干=标记条，卡片空白=收藏 */
+let pqTimer = null, pqStart = null;
+document.addEventListener('pointerdown', e => {
+  if (S.view !== 'practice' || !S.practice) return;
+  const opt = e.target.closest('.opt');
+  const stem = e.target.closest('.p-stem');
+  const card = e.target.closest('.q-main');
+  if (!opt && !stem && !card) return;
+  if (opt && (S.practice.submitted || S.practice.picked !== null)) return;
+  if (e.target.closest('button') && !opt) return;
+  pqStart = { x: e.clientX, y: e.clientY, opt: opt ? opt : null, stem: stem ? stem.dataset.stemq : null, card: card ? true : false };
+  clearTimeout(pqTimer);
+  pqTimer = setTimeout(() => {
+    const st = pqStart; pqStart = null;
+    if (!st) return;
+    if (st.opt) {
+      const k = st.opt.dataset.k;
+      const P = S.practice;
+      P.excl = P.excl || {};
+      P.excl[k] = !P.excl[k];
+      render();
+      toast(P.excl[k] ? '已排除选项 ' + k + '，再长按可恢复' : '已恢复选项 ' + k);
+    } else if (st.stem) {
+      showMarkBar(st.stem);
+    } else if (st.card) {
+      toggleFav(curQ().id);
+    }
+  }, 560);
+});
+['pointerup', 'pointercancel'].forEach(ev => {
+  document.addEventListener(ev, () => { clearTimeout(pqTimer); pqStart = null; }, true);
+});
+document.addEventListener('pointermove', e => {
+  if (!pqStart) return;
+  if (Math.abs(e.clientX - pqStart.x) > 9 || Math.abs(e.clientY - pqStart.y) > 9) { clearTimeout(pqTimer); pqStart = null; }
+});
+
+/* 标记模式下记录选区偏移 */
+document.addEventListener('selectionchange', () => {
+  if (!document.getElementById('markBar')) return;
+  const stem = document.querySelector('.p-stem');
+  const sel = window.getSelection();
+  if (!stem || !sel || !sel.rangeCount || sel.isCollapsed) { return; }
+  const r = sel.getRangeAt(0);
+  if (!stem.contains(r.commonAncestorContainer)) return;
+  const pre = document.createRange();
+  pre.selectNodeContents(stem);
+  try { pre.setEnd(r.startContainer, r.startOffset); } catch (err) { return; }
+  const s0 = pre.toString().length;
+  const len = r.toString().length;
+  if (len > 0) S.markSel = { qid: stem.dataset.stemq, s: s0, e: s0 + len };
+});
+
 /* 输入 */
 document.addEventListener('input', e => {
   const t = e.target;
@@ -3379,7 +3566,7 @@ document.addEventListener('input', e => {
     const box = $('#searchResults');
     if (box) box.innerHTML = searchResultsHTML();
   }
-  if (t.id === 'mExp' && S.modal && S.modal.type === 'editQ') { refreshHLPreview(); }
+  if (t.id === 'mExp' && S.modal && (S.modal.type === 'editQ' || S.modal.type === 'editExp')) { refreshHLPreview(); }
   if (t.id === 'datePick') {
     S.date = t.value || todayStr();
     const box = $('#searchResults');
