@@ -1197,7 +1197,7 @@ function viewCourse() {
     <h2>${esc(c.name)}</h2>
   </div>
   <div class="crumb"><span>${esc(c.major)}</span><span>·</span><span>${esc(c.grade)}</span></div>
-  <div class="stat-line"><span>${c.chapters.length} 章</span><span>${qCount(c)} 题</span><span>客观 ${objCount(c)}</span><span>主观 ${subCount(c)}</span></div>
+  <div class="stat-line"><span>${c.chapters.length} 章</span><span>${qCount(c)} 题</span><span>客观 ${objCount(c)}</span><span>主观 ${subCount(c)}</span><span style="color:#98adc0">左滑删除 · 长按收藏</span></div>
 
   <div class="actions">
     <button class="btn primary" data-act="practiceSheet" data-course="${c.id}">开始练习</button>
@@ -1256,7 +1256,7 @@ function viewChapter() {
     <h2>${esc(ch.name)}</h2>
   </div>
   <div class="crumb"><span>${esc(c.name)}</span>${ch.folder ? `<span>›</span><span>${esc(ch.folder)}</span>` : ''}<span>›</span><span>${esc(ch.name)}</span></div>
-  <div class="stat-line"><span>${all.length} 题</span><span>客观 ${ob}</span><span>主观 ${all.length - ob}</span><span>错题 ${wrongN}</span></div>
+  <div class="stat-line"><span>${all.length} 题</span><span>客观 ${ob}</span><span>主观 ${all.length - ob}</span><span>错题 ${wrongN}</span><span style="color:#98adc0">左滑删除 · 长按收藏</span></div>
 
   <div class="actions">
     <button class="btn primary" data-act="practiceSheet" data-chapter="${ch.id}">开始练习</button>
@@ -2864,6 +2864,7 @@ document.addEventListener('click', e => {
     case 'openChapter': S.chapterId = el.dataset.id; S.qFilter = 'all'; S.view = 'chapter'; S.modal = null; render(); break;
     case 'openQ': {
       if (S.favAt && Date.now() - S.favAt < 500) break;
+      if (S.swipeAt && Date.now() - S.swipeAt < 500) break;
       const f = findQ(el.dataset.qid);
       if (!f) { toast('题目已删除'); break; }
       S.qid = el.dataset.qid; S.chapterId = f.ch.id; S.view = 'qdetail'; S.modal = null; render(); break;
@@ -3546,6 +3547,45 @@ document.addEventListener('selectionchange', () => {
   const len = r.toString().length;
   if (len > 0) hlSel = { s: s0, e: s0 + len };
 });
+
+/* 删除单题（列表左滑 / 详情页共用） */
+function askDeleteQ(qid) {
+  const f = findQ(qid);
+  if (!f) { toast('题目已删除'); return; }
+  const stem = (f.q.q || '').slice(0, 36);
+  if (!confirm('删除这道题？\n' + stem + (f.q.q && f.q.q.length > 36 ? '…' : ''))) return;
+  f.ch.questions = f.ch.questions.filter(x => x.id !== qid);
+  clearQuestionFromPaper(qid);
+  saveDB();
+  S.swipeAt = Date.now();
+  if (S.view === 'qdetail' && S.qid === qid) { S.view = 'chapter'; S.chapterId = f.ch.id; }
+  render();
+  toast('已删除这道题');
+}
+function clearQuestionFromPaper(qid) {
+  if (S.practice && S.practice.list) S.practice.list = S.practice.list.filter(q => q.id !== qid);
+  if (S.preview && S.preview.questions) S.preview.questions = S.preview.questions.filter(q => q.id !== qid);
+}
+
+/* 列表左滑删除 */
+let swStart = null;
+document.addEventListener('pointerdown', e => {
+  const it = e.target.closest('.qitem[data-qid]');
+  if (!it) return;
+  swStart = { x: e.clientX, y: e.clientY, qid: it.dataset.qid };
+});
+document.addEventListener('pointermove', e => {
+  if (!swStart) return;
+  const dx = e.clientX - swStart.x, dy = e.clientY - swStart.y;
+  if (dx < -62 && Math.abs(dy) < 45) {
+    const qid = swStart.qid;
+    swStart = null;
+    askDeleteQ(qid);
+    return;
+  }
+  if (dx > 12 || Math.abs(dy) > 45) swStart = null;
+});
+['pointerup', 'pointercancel'].forEach(ev => document.addEventListener(ev, () => { swStart = null; }, true));
 
 /* 题干标记条 */
 function removeMarkBar() {
