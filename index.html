@@ -41,7 +41,7 @@ a{color:var(--accent)}
 /* ---------- 基础 ---------- */
 .topbar{display:flex;align-items:center;gap:10px;margin:2px 0 16px}
 .topbar h2{font-size:19px;flex:0 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.byline-sm{font-size:9.5px;color:var(--muted);white-space:nowrap;flex:0 0 auto;letter-spacing:0}
+.byline-sm{font-size:9.5px;color:#b2c4d6;white-space:nowrap;flex:0 0 auto;letter-spacing:0;margin-left:-14px}
 .icon-btn{width:38px;height:38px;flex:none;border-radius:50%;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;cursor:pointer;font-size:16px;color:var(--muted);line-height:1;box-shadow:var(--shadow)}
 .icon-btn:active{transform:scale(.94)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 15px;cursor:pointer;font-weight:500;transition:transform .1s,background .2s,color .2s;text-decoration:none;white-space:nowrap}
@@ -151,6 +151,10 @@ textarea.input{resize:vertical}
 .chapter-row .ch-name{font-weight:500;display:flex;align-items:center;gap:7px}
 .chapter-row .ch-name .num{font-family:"Noto Serif SC",serif;font-size:11px;color:var(--muted);flex:none}
 .chapter-row .ch-sub{font-size:11.5px;color:var(--muted);margin-top:3px}
+.selbar{position:fixed;left:0;right:0;bottom:0;z-index:60;background:rgba(255,255,255,.96);border-top:1px solid #e3edf6;box-shadow:0 -8px 24px rgba(40,80,140,.1);padding:10px 12px calc(10px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:8px;backdrop-filter:blur(10px)}
+.selbar .t{font-size:12.5px;color:#7b8fa3;flex:none}
+.selbar .t b{color:#2f6fb2;font-size:16px;margin:0 2px}
+.selbar .btn{flex:1;justify-content:center;min-width:0;padding:9px 4px;font-size:12.5px}
 .danger-zone{margin-top:26px;display:flex;gap:16px;justify-content:center}
 
 /* ---------- 筛选 ---------- */
@@ -161,7 +165,9 @@ textarea.input{resize:vertical}
 
 /* ---------- 题目列表 ---------- */
 .qlist{display:grid;gap:9px;margin-top:4px}
-.qitem{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 15px;text-align:left;cursor:pointer;box-shadow:0 1px 2px rgba(24,42,58,.03);width:100%}
+.qitem.sel{border-color:#8fbde8;background:#f3f9ff;box-shadow:inset 0 0 0 1.5px #8fbde8}
+.selmark{position:absolute;right:12px;bottom:10px;width:20px;height:20px;border-radius:50%;border:1.4px solid #cfe0ef;background:#fff;color:#2f6fb2;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1}
+.qitem{position:relative;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 15px;text-align:left;cursor:pointer;box-shadow:0 1px 2px rgba(24,42,58,.03);width:100%}
 .qitem:active{background:#fbfdff}
 .qi-top{display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap}
 .qi-stat{margin-left:auto;font-size:11px;color:var(--muted)}
@@ -224,8 +230,22 @@ textarea#pasteText{min-height:160px;font-size:16px;line-height:1.7}
 .sticky-foot{margin-top:18px}
 
 /* ---------- 做题 ---------- */
-.p-top{display:flex;align-items:center;gap:11px;margin-bottom:11px}
+.p-top{display:flex;align-items:center;gap:11px;margin-bottom:11px;position:relative}
+.p-timer{font-family:inherit;cursor:pointer;outline:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;font-size:11.5px;font-variant-numeric:tabular-nums;color:#93a7ba;background:rgba(255,255,255,.78);border:1px solid #e2ebf4;border-radius:99px;padding:2px 9px;letter-spacing:.6px;line-height:1.25}
+.p-timer.run{color:#2f6fb2;border-color:#b9d4ec;background:#edf5fd;font-weight:600}
+.p-timer.has{color:#4d6e8f;border-color:#d7e5f2}
+.timer-chip{flex:0 0 auto;font-size:11.5px;color:#93a7ba;border:1px solid #e2ebf4;background:#fff;border-radius:99px;padding:5px 10px;display:flex;align-items:center;gap:4px;line-height:1}
+.timer-chip.on{color:#2f6fb2;border-color:#b9d4ec;background:#edf5fd}
 .p-title{flex:1;min-width:0;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.idk{display:block;width:100%;margin-top:10px;padding:11px 10px;border:1px dashed #dbe6f1;background:#fbfdff;color:#7d94a9;border-radius:12px;font-size:12.5px;font-family:inherit;line-height:1.2}
+.idk:active{background:#f1f7fd}
+.regrade{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:11px 2px 0;font-size:11px;color:#9db0c3}
+.regrade button{font-family:inherit;background:none;border:1px dashed #d3e1ee;color:#5b86b0;border-radius:8px;padding:5px 11px;font-size:11.5px;line-height:1.2}
+.regrade button:active{background:#eff6fd}
+.p-tt{flex:0 1 auto;min-width:0;max-width:calc(50% - 92px);display:flex;align-items:center}
+.p-flex{flex:1 1 0;min-width:0}
+.p-tt .p-title{flex:1 1 auto;max-width:100%;min-width:0}
+.p-by{font-size:8.5px;color:#b9c8d7;letter-spacing:0;flex:0 0 auto;white-space:nowrap;margin-left:-4px}
 .p-count{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
 .p-count b{font-family:"Noto Serif SC",serif;font-size:17px;color:var(--ink)}
 .p-count.jump{background:none;border:1px solid var(--line);border-radius:9px;padding:3px 8px;cursor:pointer}
@@ -328,7 +348,11 @@ textarea#pasteText{min-height:160px;font-size:16px;line-height:1.7}
 .issue-panel button{background:none;border:0;color:var(--accent-dark);font-size:11.5px;text-decoration:underline;cursor:pointer;padding:0}
 .qi-note{font-size:11.5px;color:#a9762a;background:#fdf8ee;border-radius:7px;padding:5px 8px;margin-top:7px;line-height:1.5}
 .q-hist{font-size:11.5px;color:#8fa3b6;margin:8px 0 2px;letter-spacing:.2px}
-.p-stem{font-family:"Noto Serif SC",serif;font-size:17px;line-height:1.75;font-weight:600;white-space:pre-wrap;word-break:break-word}
+.stem-tip{display:flex;align-items:flex-start;gap:6px;font-size:11.5px;line-height:1.6;color:#9db4c8;margin:8px 0 -3px}
+.stem-tip .bd{color:#5b88b5;font-weight:600}
+.p-stem{font-family:"Noto Serif SC",serif;font-size:17px;line-height:1.75;font-weight:600;white-space:pre-wrap;word-break:break-word;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+.p-stem.marking{-webkit-user-select:text;user-select:text}
+.p-stem.marking::selection,.p-stem.marking *::selection{background:rgba(47,111,178,.28)}
 .opts{margin-top:18px}
 .opt{display:flex;gap:11px;width:100%;align-items:flex-start;text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;line-height:1.55;transition:border-color .15s,background .15s}
 .opt:active{transform:scale(.996)}
@@ -1082,6 +1106,7 @@ const ICON = {
 /* ================= 渲染 ================= */
 function render() {
   clearTimeout(S.timer);
+  if (S.view !== 'chapter') S.sel = null;
   if (!GATE.code && S.view !== 'gate' && S.view !== 'gateCodes') S.view = 'gate';
   let html = '';
   if (S.view === 'gate') html = viewGate();
@@ -1102,6 +1127,16 @@ function render() {
   else if (S.view === 'recite') html = viewRecite();
   else if (S.view === 'cover') html = viewCover();
   html = html.replace(/<div class="topbar">[\s\S]*?<\/h2>/g, m => m + '<span class="byline-sm">（by 来一块小饼干）</span><span style="flex:1;min-width:0"></span>');
+  clearInterval(S.tk);
+  if (S.view === 'practice' && S.practice && S.practice.tm && S.practice.tm.since) {
+    const tick = () => {
+      const P = S.practice, e = document.getElementById('pTimer');
+      if (!P || !e || !P.tm || !P.tm.since) return;
+      e.textContent = fmtSec(Math.floor(tmNow(P)));
+    };
+    S.tk = setInterval(tick, 1000);
+    setTimeout(tick, 0);
+  }
   $('#app').innerHTML = html + (S.modal ? viewModal() : '') + '<div id="toast" class="toast"></div>';
   if (S.draftQ) mountDraft();
   if (S.lastView !== S.view) {
@@ -1353,7 +1388,7 @@ function viewChapter() {
     <h2>${esc(ch.name)}</h2>
   </div>
   <div class="crumb"><span>${esc(c.name)}</span>${ch.folder ? `<span>›</span><span>${esc(ch.folder)}</span>` : ''}<span>›</span><span>${esc(ch.name)}</span></div>
-  <div class="stat-line"><span>${all.length} 题</span><span>客观 ${ob}</span><span>主观 ${all.length - ob}</span><span>错题 ${wrongN}</span><span style="color:#98adc0">左滑删除 · 长按菜单</span></div>
+  <div class="stat-line"><span>${all.length} 题</span><span>客观 ${ob}</span><span>主观 ${all.length - ob}</span><span>错题 ${wrongN}</span><span style="color:#98adc0">左滑删除 · 长按多选</span></div>
 
   <div class="actions">
     <button class="btn primary" data-act="practiceSheet" data-chapter="${ch.id}">开始练习</button>
@@ -1370,6 +1405,7 @@ function viewChapter() {
     ${filtered.length ? filtered.map(q => qItem(q)).join('') : `<div class="empty" style="padding:30px 10px"><p>这里还没有题目</p>${S.qFilter === 'all' ? `<button class="btn small primary" data-act="newQ" data-chapter="${ch.id}">添加第一道题</button>` : ''}</div>`}
   </div>
 
+  ${selBarHTML()}
   <div class="danger-zone">
     <button class="linkbtn" data-act="reciteChapter" data-id="${ch.id}">背诵本章</button>
     <button class="linkbtn" data-act="renameChapter" data-id="${ch.id}">重命名章节</button>
@@ -1378,9 +1414,54 @@ function viewChapter() {
   `;
 }
 
+function timerOn() { return DB.profile && DB.profile.timer === 'on'; }
+const TM_MIN = 180; /* 3 分钟内关掉＝不算这次计时 */
+function tmNow(P) { const t = P && P.tm; if (!t) return 0; return t.acc + (t.since ? (Date.now() - t.since) / 1000 : 0); }
+function tmHas(P) { return (P && P.tm && (P.tm.acc > 0 || P.tm.since)) ? true : false; }
+function tmToggle() {
+  const P = S.practice; if (!P) return;
+  P.tm = P.tm || { acc: 0, since: 0 };
+  if (P.tm.since) {
+    P.tm.acc += (Date.now() - P.tm.since) / 1000;
+    P.tm.since = 0;
+    if (P.tm.acc < TM_MIN) {
+      P.tm.acc = 0;
+      toast('不到 3 分钟，这次计时不算');
+    } else {
+      toast('计时停止，用时 ' + fmtSec(Math.floor(P.tm.acc)));
+    }
+  } else {
+    P.tm.since = Date.now();
+    toast('开始计时');
+  }
+  render();
+}
+function fmtSec(s) { const m = Math.floor(s / 60), ss = s % 60; return (m < 10 ? '0' : '') + m + ':' + (ss < 10 ? '0' : '') + ss; }
+
+function selBarHTML() {
+  if (!S.sel || S.modal) return '';
+  const n = S.sel.length;
+  return `<div class="selbar">
+    <div class="t">已选<b>${n}</b>题</div>
+    <button class="btn small" data-act="selAll">全选</button>
+    <button class="btn small primary" data-act="selMove"${n ? '' : ' disabled'}>移动到</button>
+    <button class="btn small" data-act="selDel"${n ? '' : ' disabled'} style="color:#c4553f;border-color:#eccfca">删除</button>
+    <button class="btn small" data-act="selExit">取消</button>
+  </div>`;
+}
+
+function selToggle(id) {
+  S.sel = S.sel || [];
+  const i = S.sel.indexOf(id);
+  if (i > -1) S.sel.splice(i, 1); else S.sel.push(id);
+  render();
+}
+
 function qItem(q) {
   const st = q.st || {};
-  return `<button class="qitem" data-act="openQ" data-qid="${q.id}" data-favq="${q.id}">
+  const inSel = S.sel && S.sel.indexOf(q.id) > -1;
+  return `<button class="qitem${inSel ? ' sel' : ''}" data-act="openQ" data-qid="${q.id}" data-favq="${q.id}">
+    ${S.sel ? `<span class="selmark">${inSel ? '✓' : ''}</span>` : ''}
     <div class="qi-top">
       <span class="tag ${qClass(q)}">${qLabel(q)}</span>
       ${q.fav ? '<span class="tag fav">★ 收藏</span>' : ''}
@@ -1413,6 +1494,7 @@ function viewQDetail() {
     <span class="muted" style="font-size:11.5px;margin-left:auto">做过 ${st.right + st.wrong} 次 · ${st.right} 对 ${st.wrong} 错</span>
     <button class="ask" data-act="askQ" data-qid="${q.id}" title="这道题有问题？点这里反馈">?</button>
   </div>
+  <div class="stem-tip"><span>✏️</span><span><b class="bd">长按题干</b>可标重点 · 导出时一起带上</span></div>
   <div class="q-stem-detail">${stemHTML(q.q, q.marks)}</div>
   ${(q.images||[]).length ? `<div class="q-imgs">${(q.images||[]).map(id => IMG[id] ? `<div class="q-img-wrap"><img src="${IMG[id]}" alt=""><span class="x" data-act="delImage" data-id="${id}" data-qid="${q.id}">✕</span></div>` : '').join('')}</div>` : ''}
   ${q.type !== 'short' ? `<div class="d-opts">${q.options.map(o => `
@@ -1626,7 +1708,16 @@ function viewPractice() {
   return `
   <div class="p-top">
     <button class="icon-btn" data-act="exitPractice">←</button>
-    <div class="p-title">${esc(P.title)}</div>
+    <div class="p-tt"><div class="p-title">${esc(P.title)}</div></div>
+    <span class="p-flex"></span>
+    <div class="p-by">by 来一块小饼干</div>
+    ${(() => {
+      const secs = Math.floor(tmNow(P));
+      const run = !!(P.tm && P.tm.since);
+      const txt = tmHas(P) ? fmtSec(secs) : '⏱ 开始计时';
+      const cls = !tmHas(P) ? ' idle' : run ? ' run' : ' has';
+      return `<button class="p-timer${cls}" id="pTimer" data-act="tmToggle">${txt}</button>`;
+    })()}
     ${total >= 10 ? `<button class="p-count jump" data-act="openPalette" title="题号导航"><b>${P.idx + 1}</b>/${total}</button>` : `<div class="p-count"><b>${P.idx + 1}</b>/${total}</div>`}
   </div>
   <div class="bar"><i style="width:${clamp(pct, 3, 100)}%"></i></div>
@@ -1641,10 +1732,17 @@ function viewPractice() {
       <button class="ask" data-act="askQ" data-qid="${q.id}" title="这道题有问题？点这里反馈">?</button>
     </div>
     ${(q.st.right || 0) + (q.st.wrong || 0) ? `<div class="q-hist">本题做过 ${(q.st.right || 0) + (q.st.wrong || 0)} 次 · 对 ${q.st.right || 0} · 错 ${q.st.wrong || 0} · 正确率 ${Math.round((q.st.right || 0) / ((q.st.right || 0) + (q.st.wrong || 0)) * 100)}%</div>` : ''}
+    <div class="stem-tip"><span>✏️</span><span><b class="bd">长按题干</b>可标重点 · 拖选文字后点样式</span></div>
     <div class="p-stem" data-stemq="${q.id}">${stemHTML(q.q, q.marks)}</div>
     ${(q.images||[]).length ? `<div class="q-imgs">${(q.images||[]).map(id => IMG[id] ? `<img src="${IMG[id]}" alt="">` : '').join('')}</div>` : ''}
     ${renderAnswerArea(q, P)}
     ${renderFeedback(q, P)}
+    ${(() => {
+      const rec = (P.answers || []).filter(a => a.qi === P.idx).pop();
+      if (!rec || typeof rec.correct !== 'boolean') return '';
+      if (q.type !== 'short' && !q.answer) return '';
+      return `<div class="regrade"><span>这题算${rec.correct ? '做对' : '做错'}</span><button data-act="regrade">${rec.correct ? '我是蒙的，改判为错' : '其实我会，改判为对'}</button></div>`;
+    })()}
     ${S.draftQ === q.id ? `<div class="draft-layer" data-draft="${q.id}"><div class="draft-bar"><span>草稿 · 直接用手指写</span><button data-act="draftClear">清除</button><button class="primary" data-act="draftClose">完成</button></div><canvas id="draftCv"></canvas></div>` : ''}
   </div>
   ${practiceFoot(q, P)}
@@ -1660,9 +1758,11 @@ function renderAnswerArea(q, P) {
     return `<div class="opts"><div class="short-box"><div class="exp-head"><b>参考答案</b><button class="exp-edit" data-act="editExp" data-qid="${q.id}">改答案 / 标重点</button></div>${q.exp ? expHTML(q.exp, q.hl) : '这道题还没有参考答案。'}</div></div>`;
   }
   const multi = q.type === 'multi';
+  const untouched = !P.picked && !P.submitted;
   return `<div class="opts">
     ${q.options.map(o => optBtn(o, q, P)).join('')}
-    ${multi && !P.submitted && !P.picked ? '<div class="multi-hint">选好后点下面的“提交答案”。</div>' : ''}
+    ${multi && untouched ? '<div class="multi-hint">选好后点下面的“提交答案”。</div>' : ''}
+    ${untouched && q.answer ? '<button class="idk" data-act="idk">直接看答案</button>' : ''}
   </div>`;
 }
 
@@ -1694,13 +1794,17 @@ function renderFeedback(q, P) {
   }
   const expHead = `<div class="exp-head"><span class="exp-label">解析</span><button class="exp-edit" data-act="editExp" data-qid="${q.id}">改解析 / 标重点</button></div>`;
   if (!q.answer) return `<div class="fb note">这道题还没有设置答案，看完解析继续。</div>${q.exp ? `<div class="exp">${expHead}${expHTML(q.exp, q.hl)}</div>` : `<div class="exp">${expHead}这道题还没有解析。</div>`}`;
-  if (P.picked === null && !P.submitted) return '';
+  if (P.picked === null && !P.submitted) {
+    if (!P.revealed) return '';
+    return `<div class="fb note">正确答案 <b>${esc(answerText(q))}</b> · 看完自己选，或者跳过这题</div>${q.exp ? `<div class="exp">${expHead}${expHTML(q.exp, q.hl)}</div>` : ''}`;
+  }
+  const hit = P.picked && String(P.picked).split('').sort().join('') === String(q.answer).split('').sort().join('');
   if (P.correct === true) {
-    return `<div class="fb ok">✓ 回答正确<div class="fb-row">你选了 <b>${esc(P.picked || '')}</b></div></div>${q.exp ? `<div class="exp">${expHead}${expHTML(q.exp, q.hl)}</div>` : ''}`;
+    return `<div class="fb ok">✓ ${hit ? '回答正确' : '按你的改判算对'}<div class="fb-row">你选了 <b>${esc(P.picked || '')}</b></div></div>${q.exp ? `<div class="exp">${expHead}${expHTML(q.exp, q.hl)}</div>` : ''}`;
   }
   return `<div class="fb bad">
-    <div class="fb-title">✕ 回答错误</div>
-    <div class="fb-row">正确答案 <b>${esc(answerText(q))}</b>${P.picked ? ` · 你选了 <b>${esc(P.picked)}</b>` : ''}</div>
+    <div class="fb-title">✕ ${!P.picked ? '这题不会' : hit ? '按你的改判算错' : '回答错误'}</div>
+    <div class="fb-row">正确答案 <b>${esc(answerText(q))}</b>${P.picked ? ` · 你选了 <b>${esc(P.picked)}</b>` : ' · 你没选'}</div>
     <div class="exp">${expHead}${q.exp ? expHTML(q.exp, q.hl) : '这道题还没有解析。'}</div>
   </div>`;
 }
@@ -1739,7 +1843,7 @@ function viewResult() {
   </div>
   <div class="result-head">
     <div class="score-pct">${pct}<small>%</small></div>
-    <div class="score-sub">共 ${total} 题，答对 ${right} 题</div>
+    <div class="score-sub">共 ${total} 题，答对 ${right} 题${P && tmHas(P) && Math.floor(tmNow(P)) >= TM_MIN ? ' · 用时 ' + fmtSec(Math.floor(tmNow(P))) : ''}</div>
   </div>
   <div class="stat-row">
     <div class="stat g"><b>${right}</b><span>答对</span></div>
@@ -1997,6 +2101,20 @@ function viewModal() {
         <button class="btn block" data-act="expFolderAll" data-course="${m.course}" data-name="${esc(m.name)}" style="width:100%">导出这个文件夹（题目 + 解析）</button>
       </div>
       <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button></div>`;
+  } else if (m.type === 'selMove') {
+    const n = (S.sel || []).length;
+    const list = DB.courses.reduce((a, c) => a.concat(c.chapters.map(ch => ({ c, ch }))), []).filter(x => x.ch.id !== S.chapterId);
+    body = `<h3>移动 ${n} 道题</h3>
+      <p class="hint">选一个章节，题搬过去，原章节里就不留了。</p>
+      <div style="max-height:52vh;overflow:auto;margin-top:8px">
+      ${list.length ? list.map(x => `<button class="btn block" data-act="selDoMove" data-to="${x.ch.id}" style="width:100%;margin-bottom:8px;text-align:left;justify-content:flex-start;font-size:13px">${esc(x.c.name)} › ${esc(x.ch.name)}　<span style="color:#98adc0">${x.ch.questions.length} 题</span></button>`).join('') : '<p class="muted" style="font-size:13px">还没有别的章节，先去课程页建一章。</p>'}
+      </div>
+      <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button></div>`;
+  } else if (m.type === 'selDel') {
+    const n = (S.sel || []).length;
+    body = `<h3>删除 ${n} 道题？</h3>
+      <p class="hint">删掉就找不回来，这几题的对错记录也一起没了。</p>
+      <div class="modal-actions"><button class="btn" data-act="modalClose">不删</button><button class="btn danger" data-act="selDoDel">删除</button></div>`;
   } else if (m.type === 'exportQ') {
     const f = findQ(m.qid);
     body = `<h3>导出这道题</h3>
@@ -2337,7 +2455,8 @@ function startPractice(list, opts) {
   S.practice = {
     list, idx: Math.max(0, Math.min(opts.startIdx || 0, list.length - 1)), answers: [], picked: null, multiSel: [], submitted: false,
     revealed: false, judged: null, correct: null,
-    title: opts.title, courseId: opts.courseId || null, chapterId: opts.chapterId || null, mode: opts.mode || 'all'
+    title: opts.title, courseId: opts.courseId || null, chapterId: opts.chapterId || null, mode: opts.mode || 'all',
+    tm: { acc: 0, since: opts.timer ? Date.now() : 0 }
   };
   S.view = 'practice';
   render();
@@ -2426,6 +2545,39 @@ function selfJudge(ok) {
   P.correct = !!ok;
   recordAnswer(!!ok, '自评');
   render();
+}
+
+function idk() {
+  const P = S.practice, q = curQ();
+  if (!P || !q) return;
+  if (P.picked || P.submitted) return;
+  P.revealed = true;
+  render();
+  toast('答案在下面，看完自己想选就选');
+}
+
+function regrade() {
+  const P = S.practice, q = curQ();
+  if (!P || !q) return;
+  const rec = (P.answers || []).filter(a => a.qi === P.idx).pop();
+  if (!rec || typeof rec.correct !== 'boolean') { toast('这题还没有判定，改不了'); return; }
+  const to = !rec.correct;
+  if (rec.correct && (q.st.right || 0) > 0) q.st.right--;
+  if (!rec.correct && (q.st.wrong || 0) > 0) q.st.wrong--;
+  if (to) q.st.right = (q.st.right || 0) + 1; else q.st.wrong = (q.st.wrong || 0) + 1;
+  rec.correct = to;
+  P.correct = to;
+  if (q.type === 'short') P.judged = to;
+  if (S.result) {
+    const answers = P.answers || [];
+    S.result.right = answers.filter(a => a.correct === true).length;
+    S.result.wrong = answers.filter(a => a.correct === false).length;
+    S.result.wrongItems = answers.filter(a => a.correct === false).map(a => ({ q: P.list[a.qi], picked: a.picked }));
+    const log = (DB.logs || [])[0];
+    if (log && log.items) { const it = log.items.find(x => x.qid === rec.qid); if (it) it.correct = to; }
+  }
+  saveDB(); saveSession(); render();
+  toast(to ? '改判为做对' : '改判为做错，这题算错一次');
 }
 
 function advance() {
@@ -2770,6 +2922,8 @@ function viewCover() {
   <div class="topbar">
     <button class="icon-btn" data-act="coverClose">←</button>
     <h2>开始做题</h2>
+    <span style="flex:1;min-width:0"></span>
+    <button class="timer-chip${timerOn() ? ' on' : ''}" data-act="timerToggle">⏱ ${timerOn() ? '计时中' : '开始计时'}</button>
   </div>
   <div class="cover-head">
     <div class="cover-big">${esc(C.title)}</div>
@@ -2824,7 +2978,7 @@ function startFromCover(idx) {
   } else if (random) {
     list = shuffleArr(list.slice());
   }
-  const opts = { title: C.title + (C.filter === 'all' ? '' : ' · ' + ({ obj: '客观题', sub: '主观题', wrong: '错题', todo: '没做过', fav: '收藏' }[C.filter] || '')), courseId: C.courseId, chapterId: C.chapterId, mode: C.filter, startIdx };
+  const opts = { title: C.title + (C.filter === 'all' ? '' : ' · ' + ({ obj: '客观题', sub: '主观题', wrong: '错题', todo: '没做过', fav: '收藏' }[C.filter] || '')), courseId: C.courseId, chapterId: C.chapterId, mode: C.filter, startIdx, timer: timerOn() };
   S.cover = null;
   startPractice(list, opts);
 }
@@ -3171,7 +3325,7 @@ function viewRecite() {
   return `
   <div class="p-top">
     <button class="icon-btn" data-act="exitRecite">←</button>
-    <div class="p-title">背诵 · ${esc(R.title)}</div>
+    <div class="p-tt"><div class="p-title">背诵 · ${esc(R.title)}</div><div class="p-by">（by 来一块小饼干）</div></div>
     <div class="p-count"><b>${R.idx + 1}</b>/${total}</div>
   </div>
   <div class="bar"><i style="width:${clamp((R.idx + 1) / total * 100, 3, 100)}%"></i></div>
@@ -3384,7 +3538,42 @@ document.addEventListener('click', e => {
     case 'openCourse': S.courseId = el.dataset.id; S.view = 'course'; S.modal = null; render(); break;
     case 'openChapter':
       if (S.holdAt && Date.now() - S.holdAt < 500) break; S.chapterId = el.dataset.id; S.qFilter = 'all'; S.view = 'chapter'; S.modal = null; render(); break;
+    case 'selAll': {
+      const f = getChapter(S.chapterId);
+      if (!f) break;
+      const all = f.ch.questions;
+      const list = S.qFilter === 'obj' ? all.filter(isObj) : S.qFilter === 'sub' ? all.filter(q => !isObj(q)) : S.qFilter === 'wrong' ? all.filter(q => q.st.wrong > 0) : all;
+      S.sel = list.map(q => q.id);
+      render();
+      break;
+    }
+    case 'selExit': S.sel = null; render(); break;
+    case 'selMove': if (S.sel && S.sel.length) { S.modal = { type: 'selMove' }; render(); } break;
+    case 'selDel': if (S.sel && S.sel.length) { S.modal = { type: 'selDel' }; render(); } break;
+    case 'selDoMove': {
+      const to = el.dataset.to;
+      const f = getChapter(S.chapterId), g = getChapter(to);
+      if (!f || !g) break;
+      const ids = (S.sel || []).slice();
+      const moved = [];
+      f.ch.questions = f.ch.questions.filter(q => { if (ids.indexOf(q.id) > -1) { moved.push(q); return false; } return true; });
+      g.ch.questions = g.ch.questions.concat(moved);
+      S.sel = null; S.modal = null; saveDB(); render();
+      toast('已把 ' + moved.length + ' 题移到「' + g.ch.name + '」');
+      break;
+    }
+    case 'selDoDel': {
+      const f = getChapter(S.chapterId);
+      if (!f) break;
+      const ids = (S.sel || []).slice();
+      const n = ids.length;
+      f.ch.questions = f.ch.questions.filter(q => ids.indexOf(q.id) < 0);
+      S.sel = null; S.modal = null; saveDB(); render();
+      toast('已删除 ' + n + ' 题');
+      break;
+    }
     case 'openQ': {
+      if (S.sel) { selToggle(el.dataset.qid); break; }
       if (S.favAt && Date.now() - S.favAt < 500) break;
       if (S.swipeAt && Date.now() - S.swipeAt < 500) break;
       const f = findQ(el.dataset.qid);
@@ -3888,6 +4077,15 @@ document.addEventListener('click', e => {
     }
     case 'coverFilter': { S.cover.filter = el.dataset.f; render(); break; }
     case 'coverOrder': { S.cover.order = el.dataset.v === 'random' ? 'random' : 'seq'; render(); break; }
+    case 'tmToggle': tmToggle(); break;
+    case 'timerToggle':
+      DB.profile = DB.profile || {};
+      DB.profile.timer = timerOn() ? 'off' : 'on';
+      saveDB(); render();
+      toast(timerOn() ? '计时已开，做题时顶上会显示用时' : '已关掉计时');
+      break;
+    case 'idk': idk(); break;
+    case 'regrade': regrade(); break;
     case 'coverStart': startFromCover(-1); break;
     case 'gateEnter': {
       const inp = $('#gateCode');
@@ -4507,6 +4705,9 @@ document.addEventListener('pointermove', e => {
 function removeMarkBar() {
   const b = document.getElementById('markBar');
   if (b) b.remove();
+  const m = document.querySelector('.p-stem.marking');
+  if (m) m.classList.remove('marking');
+  try { window.getSelection().removeAllRanges(); } catch (e) {}
   S.markSel = null;
 }
 function showMarkBar(qid) {
@@ -4608,6 +4809,10 @@ document.addEventListener('pointerdown', e => {
     S.favAt = Date.now();
     const f = findQ(st.id);
     if (!f) return;
+    if (S.view === 'chapter') {
+      if (!S.sel) { S.sel = [st.id]; render(); toast('多选模式：点题勾选，再选移动或删除'); }
+      return;
+    }
     S.modal = { type: 'qmenu', qid: st.id };
     render();
   }, 560);
@@ -4672,6 +4877,7 @@ document.addEventListener('pointermove', e => {
 let pqTimer = null, pqStart = null;
 document.addEventListener('pointerdown', e => {
   if (S.view !== 'practice' || !S.practice) return;
+  if (document.getElementById('markBar')) return;
   const opt = e.target.closest('.opt');
   const stem = e.target.closest('.p-stem');
   const card = e.target.closest('.q-main');
@@ -4704,6 +4910,58 @@ document.addEventListener('pointermove', e => {
   if (!pqStart) return;
   if (Math.abs(e.clientX - pqStart.x) > 9 || Math.abs(e.clientY - pqStart.y) > 9) { clearTimeout(pqTimer); pqStart = null; }
 });
+
+/* 标记态：按住题干拖动选字（不依赖系统长按选择） */
+function caretRangeAt(x, y) {
+  try {
+    if (document.caretRangeFromPoint) return document.caretRangeFromPoint(x, y);
+    if (document.caretPositionFromPoint) {
+      const p = document.caretPositionFromPoint(x, y);
+      if (!p) return null;
+      const r = document.createRange();
+      r.setStart(p.offsetNode, p.offset);
+      r.collapse(true);
+      return r;
+    }
+  } catch (err) { return null; }
+  return null;
+}
+
+let mkDrag = null;
+document.addEventListener('pointerdown', e => {
+  if (!document.getElementById('markBar')) return;
+  const stem = e.target.closest('.p-stem');
+  if (!stem) return;
+  const r = caretRangeAt(e.clientX, e.clientY);
+  if (!r) return;
+  stem.classList.add('marking');
+  mkDrag = { stem, a: r };
+  const sel = window.getSelection();
+  const rg = document.createRange();
+  rg.setStart(r.startContainer, r.startOffset); rg.collapse(true);
+  sel.removeAllRanges(); sel.addRange(rg);
+  if (e.cancelable) e.preventDefault();
+}, { passive: false });
+
+document.addEventListener('pointermove', e => {
+  if (!mkDrag) return;
+  const b = caretRangeAt(e.clientX, e.clientY);
+  if (!b) return;
+  try {
+    const sel = window.getSelection();
+    const rg = document.createRange();
+    if (mkDrag.a.compareBoundaryPoints(Range.START_TO_START, b) <= 0) {
+      rg.setStart(mkDrag.a.startContainer, mkDrag.a.startOffset);
+      rg.setEnd(b.startContainer, b.startOffset);
+    } else {
+      rg.setStart(b.startContainer, b.startOffset);
+      rg.setEnd(mkDrag.a.startContainer, mkDrag.a.startOffset);
+    }
+    sel.removeAllRanges(); sel.addRange(rg);
+  } catch (err) {}
+}, { passive: true });
+
+['pointerup', 'pointercancel'].forEach(ev => document.addEventListener(ev, () => { mkDrag = null; }, true));
 
 /* 标记模式下记录选区偏移 */
 document.addEventListener('selectionchange', () => {
