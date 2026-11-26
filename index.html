@@ -522,21 +522,27 @@ function expHTML(text, hl) {
   const t = String(text == null ? '' : text);
   if (!hl || !hl.length) return esc(t);
   const n = t.length;
-  const col = new Array(n).fill('');
-  const own = new Array(n).fill(-1);
+  const isLine = c => c === 'ul' || c === 'wavy' || c === 'circle';
+  const bg = new Array(n).fill(''), bgo = new Array(n).fill(-1);
+  const ln = new Array(n).fill(''), lno = new Array(n).fill(-1);
   hl.forEach((h, i) => {
     const a = Math.max(0, Math.min(Number(h.s) || 0, n));
     const b = Math.max(0, Math.min(Number(h.e) || 0, n));
-    for (let k = a; k < b; k++) { col[k] = h.c; own[k] = i; }
+    for (let k = a; k < b; k++) {
+      if (isLine(h.c)) { ln[k] = h.c; lno[k] = i; }
+      else { bg[k] = h.c; bgo[k] = i; }
+    }
   });
-  let out = '', buf = '', cur = '', curOwn = -1;
+  let out = '', buf = '', cb = '', cl = '', ob = -1, ol = -1;
   const flush = () => {
     if (!buf) return;
-    out += cur ? `<span class="hl hl-${cur}" data-act="hlRemove" data-hl="${curOwn}" title="点一下去掉这句标记">${esc(buf)}</span>` : esc(buf);
-    buf = '';
+    let inner = esc(buf);
+    if (cl) inner = `<span class="hl hl-${cl}" data-act="hlRemove" data-hl="${ol}">${inner}</span>`;
+    if (cb) inner = `<span class="hl hl-${cb}" data-act="hlRemove" data-hl="${ob}">${inner}</span>`;
+    out += inner; buf = '';
   };
   for (let i = 0; i < n; i++) {
-    if (col[i] !== cur || own[i] !== curOwn) { flush(); cur = col[i]; curOwn = own[i]; }
+    if (bg[i] !== cb || bgo[i] !== ob || ln[i] !== cl || lno[i] !== ol) { flush(); cb = bg[i]; ob = bgo[i]; cl = ln[i]; ol = lno[i]; }
     buf += t[i];
   }
   flush();
@@ -1420,6 +1426,7 @@ function viewQDetail() {
     <button class="btn primary" data-act="practiceOne" data-qid="${q.id}">练这道题</button>
     <button class="btn" data-act="toggleFav" data-qid="${q.id}">${q.fav ? '★ 取消收藏' : '☆ 收藏'}</button>
     <button class="btn" data-act="addImg" data-qid="${q.id}">＋ 加图片</button>
+    <button class="btn" data-act="exportQMarks" data-qid="${q.id}" style="flex:1 1 100%">导出这道题（题干 + 答案 + 解析）</button>
     <button class="btn danger" data-act="delQ" data-qid="${q.id}">删除</button>
   </div>
   `;
@@ -1916,6 +1923,7 @@ function viewModal() {
       body = `<h3>这道题</h3>
         <p class="hint">${esc(f.c.name)} › ${esc(f.ch.name)}</p>
         <div class="short-box" style="margin-bottom:12px;max-height:26vh;overflow:auto">${esc((q.q || '').slice(0, 120))}${(q.q || '').length > 120 ? '…' : ''}</div>
+        <button class="btn block" data-act="qmenuEdit" data-qid="${q.id}" style="width:100%;margin-bottom:9px">编辑题干和选项</button>
         <div class="bk-row">
           <button class="btn" data-act="qmenuFav" data-qid="${q.id}" style="flex:1">${q.fav ? '★ 取消收藏' : '☆ 收藏'}</button>
           <button class="btn" data-act="qmenuDel" data-qid="${q.id}" style="flex:1;color:var(--red);border-color:#eccfca">删除这道题</button>
@@ -1983,6 +1991,21 @@ function viewModal() {
       <div class="bk-row" style="margin-bottom:8px"><button class="btn" data-act="folderUp" data-course="${m.course}" data-name="${esc(m.name)}" style="flex:1">↑ 上移</button><button class="btn" data-act="folderDown" data-course="${m.course}" data-name="${esc(m.name)}" style="flex:1">↓ 下移</button></div>
       <div class="bk-row"><button class="btn" data-act="renameFolderAsk" data-course="${m.course}" data-name="${esc(m.name)}" style="flex:1">重命名</button>
       <button class="btn" data-act="delFolder" data-course="${m.course}" data-name="${esc(m.name)}" style="flex:1;color:var(--red);border-color:#eccfca">删除文件夹</button></div>` : '<p class="hint">未分组里的章节，长按单章就能移走或删掉。</p>'}
+      <div style="margin:6px 0 10px">
+        <button class="btn block" data-act="expFolderStem" data-course="${m.course}" data-name="${esc(m.name)}" style="width:100%;margin-bottom:8px">只导出这个文件夹的题目</button>
+        <button class="btn block" data-act="expFolderExp" data-course="${m.course}" data-name="${esc(m.name)}" style="width:100%;margin-bottom:8px">只导出这个文件夹的解析</button>
+        <button class="btn block" data-act="expFolderAll" data-course="${m.course}" data-name="${esc(m.name)}" style="width:100%">导出这个文件夹（题目 + 解析）</button>
+      </div>
+      <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button></div>`;
+  } else if (m.type === 'exportQ') {
+    const f = findQ(m.qid);
+    body = `<h3>导出这道题</h3>
+      <p class="hint">选一种，导成 txt，标记会一起带上</p>
+      <div class="bk-row" style="flex-direction:column;gap:9px;margin-top:6px">
+        <button class="btn" data-act="expQStem" data-qid="${m.qid}" style="width:100%">只导出题目（题干 + 选项 + 答案）</button>
+        <button class="btn" data-act="expQExp" data-qid="${m.qid}" style="width:100%">只导出解析（含解析标记）</button>
+        <button class="btn primary" data-act="expQAll" data-qid="${m.qid}" style="width:100%">题目 + 解析 一起导出</button>
+      </div>
       <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button></div>`;
   } else if (m.type === 'chmenu') {
     const f = getChapter(m.id);
@@ -1992,7 +2015,10 @@ function viewModal() {
         <div class="bk-row" style="margin-bottom:8px"><button class="btn" data-act="chUp" data-id="${m.id}" style="flex:1">↑ 上移</button><button class="btn" data-act="chDown" data-id="${m.id}" style="flex:1">↓ 下移</button></div>
         <button class="btn" data-act="moveChAsk" data-id="${m.id}" style="width:100%;margin-bottom:8px">移动到其他文件夹</button>
         <button class="btn" data-act="renameChapter" data-id="${m.id}" style="width:100%;margin-bottom:8px">重命名章节</button>
-        <button class="btn" data-act="exportChapter" data-id="${m.id}" style="width:100%;margin-bottom:8px">导出这个章节（txt）</button>
+        <button class="btn" data-act="exportChStem" data-id="${m.id}" style="width:100%;margin-bottom:8px">只导出本章题目（题干 + 答案）</button>
+        <button class="btn" data-act="exportChExp" data-id="${m.id}" style="width:100%;margin-bottom:8px">只导出本章解析</button>
+        <button class="btn" data-act="exportChapter" data-id="${m.id}" style="width:100%;margin-bottom:8px">导出整章（题目 + 答案 + 解析）</button>
+        <button class="btn" data-act="exportChapterMarks" data-id="${m.id}" style="width:100%;margin-bottom:8px">只导出本章标记的重点</button>
         <button class="btn" data-act="delChapter" data-id="${m.id}" style="width:100%;color:var(--red);border-color:#eccfca">删除这个章节${n ? '（' + n + ' 题一起删）' : ''}</button>
       </div>
       <div class="modal-actions"><button class="btn" data-act="modalClose">取消</button></div>`;
@@ -2623,6 +2649,32 @@ function coverFiltered() {
   return base.slice();
 }
 
+function gateErrHTML() {
+  const e = S.gateErr;
+  if (!e) return '';
+  if (e === '已过期' || e === '已停用') {
+    return `<div class="card" style="margin-top:16px;padding:18px 18px;border-color:#eccfca">
+      <div style="font-size:16px;font-weight:700;color:#c4553f">${e === '已停用' ? '密码已停用' : '密码已到期'}</div>
+      <p style="font-size:13.5px;color:#5b6b7b;line-height:1.85;margin-top:10px">可联系饼干续费继续使用。</p>
+      <div style="margin-top:10px;background:#f7f9fb;border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">
+        <div style="font-size:13px;color:#7b8fa3">微信</div>
+        <div style="font-size:16px;font-weight:700;letter-spacing:.5px;color:#1d3557;flex:1">Dahexiangdongliule</div>
+        <button class="btn small" data-act="copyWx">复制</button>
+      </div>
+      <button class="btn primary block" data-act="gateErrBack" style="margin-top:12px">知道了</button></div>`;
+  }
+  if (e === '未开始') {
+    return `<div class="card" style="margin-top:16px;padding:16px 18px">
+      <div style="font-size:15px;font-weight:700;color:#b8832f">还没到开始日期</div>
+      <p style="font-size:12.5px;color:#7b8fa3;line-height:1.8;margin-top:8px">这个码还没生效，到开始那天再打开就行。</p>
+      <button class="btn block" data-act="gateErrBack" style="margin-top:10px">知道了</button></div>`;
+  }
+  return `<div class="card" style="margin-top:16px;padding:16px 18px;border-color:#eccfca">
+    <div style="font-size:15px;font-weight:700;color:#c4553f">码不对</div>
+    <p style="font-size:12.5px;color:#7b8fa3;line-height:1.8;margin-top:8px">检查一下是不是少打或多打了字符（不区分大小写）。还是进不去，就加微信联系饼干。</p>
+    <button class="btn block" data-act="gateErrBack" style="margin-top:10px">知道了</button></div>`;
+}
+
 function viewGate() {
   return `
   <div style="padding:56px 6px 0;text-align:center">
@@ -2631,11 +2683,12 @@ function viewGate() {
     <div style="font-size:11.5px;color:#98adc0;margin-top:2px">（by 来一块小饼干）</div>
   </div>
   <div class="card" style="margin-top:26px;padding:18px 16px">
-    <p style="font-size:13px;color:#5b6b7b;line-height:1.7;margin:0 0 14px">私人题库，输入你的专属码进入。没有码可联系饼干获取。</p>
+    <p style="font-size:13px;color:#5b6b7b;line-height:1.7;margin:0 0 14px">私人题库，输入你的专属码进入。没有码加微信 Dahexiangdongliule 找饼干。</p>
     <input class="input" id="gateCode" placeholder="输入专属码" autocomplete="off" autocapitalize="characters" spellcheck="false" style="text-align:center;letter-spacing:.1em;font-size:15px" />
     <button class="btn primary block" data-act="gateEnter" style="margin-top:12px">进入</button>
     <div style="font-size:11.5px;color:#98adc0;margin-top:10px;text-align:center">码会记在这台设备上，下次不用再输</div>
   </div>
+  ${gateErrHTML()}
   <div style="text-align:center;margin-top:18px"><button class="linkbtn" data-act="gateAdmin" style="font-size:12px;color:#98adc0">我是管理员</button></div>
   `;
 }
@@ -2998,6 +3051,99 @@ function startRecite(list, title) {
   render();
 }
 
+const MARK_NAMES = { hl: '高光', ul: '横线', circle: '圈圈' };
+const HL_NAMES = { y: '黄色高亮', r: '红色高亮', b: '蓝色高亮', ul: '蓝色下划线', wavy: '橙红波浪', circle: '绿色圈' };
+
+function qMarksLines(q) {
+  const out = [];
+  (q.marks || []).forEach(m => {
+    const t = (q.q || '').slice(m.s, m.e).trim();
+    if (t) out.push('题干（' + (MARK_NAMES[m.k] || '标记') + '）：' + t);
+  });
+  (q.hl || []).forEach(h => {
+    const t = (q.exp || '').slice(h.s, h.e).trim();
+    if (t) out.push('解析（' + (HL_NAMES[h.c] || '标记') + '）：' + t);
+  });
+  return out;
+}
+
+function qTypeName(q) {
+  return q.type === 'multi' ? '多选题' : q.type === 'judge' ? '判断题' : q.type === 'short' ? '主观题' : '单选题';
+}
+
+function qFullText(q, i, withNo) {
+  const lines = [];
+  lines.push((typeof i === 'number' ? (i + 1) + '. ' : '') + '【' + qTypeName(q) + '】' + String(q.q || ''));
+  if (q.type !== 'short' && (q.options || []).length) {
+    q.options.forEach(o => lines.push('   ' + o.k + '. ' + o.t + (String(q.answer || '').indexOf(o.k) > -1 ? '  ← 正确答案' : '')));
+  }
+  if (q.type === 'short') lines.push('   参考答案：' + (q.exp || '（暂无）'));
+  else if (String(q.answer || '').indexOf(',') === -1 && (q.answer || '').length > 1) lines.push('   正确答案：' + String(q.answer).split('').join('、'));
+  else if ((q.answer || '').length > 1) lines.push('   正确答案：' + String(q.answer).split('').join('、'));
+  else lines.push('   正确答案：' + (q.answer || '（未设）'));
+  if (q.type !== 'short') {
+    lines.push('   解析：' + (q.exp ? q.exp.replace(/\n/g, '\n      ') : '（暂无解析）'));
+  }
+  const mk = qMarksLines(q);
+  if (mk.length) {
+    lines.push('   我标出的重点：');
+    mk.forEach(x => lines.push('     · ' + x));
+  }
+  return lines.join('\n');
+}
+
+function qStemOnly(q, i) {
+  const lines = [];
+  lines.push((typeof i === 'number' ? (i + 1) + '. ' : '') + '【' + qTypeName(q) + '】' + String(q.q || ''));
+  if (q.type !== 'short' && (q.options || []).length) {
+    q.options.forEach(o => lines.push('   ' + o.k + '. ' + o.t + (String(q.answer || '').indexOf(o.k) > -1 ? '  ← 正确答案' : '')));
+  } else if (q.type === 'short') {
+    lines.push('   （主观题，无选项）');
+  }
+  lines.push('   正确答案：' + (q.answer ? String(q.answer).split('').join('、') : (q.type === 'short' ? '见解析' : '（未设）')));
+  const mk = (q.marks || []).map(m => ({ t: (q.q || '').slice(m.s, m.e).trim(), k: m.k })).filter(x => x.t);
+  if (mk.length) {
+    lines.push('   题干标记：');
+    mk.forEach(x => lines.push('     · ' + (MARK_NAMES[x.k] || '标记') + '：' + x.t));
+  }
+  return lines.join('\n');
+}
+
+function qExpOnly(q, i) {
+  const lines = [];
+  lines.push((typeof i === 'number' ? (i + 1) + '. ' : '') + '【' + qTypeName(q) + '】' + String(q.q || '').slice(0, 40) + (String(q.q || '').length > 40 ? '…' : ''));
+  lines.push('   ' + (q.type === 'short' ? '参考答案' : '解析') + '：' + ((q.exp || '').trim() || '（暂无）'));
+  const hs = (q.hl || []).map(h => ({ t: (q.exp || '').slice(h.s, h.e).trim(), c: h.c })).filter(x => x.t);
+  if (hs.length) {
+    lines.push('   解析标记：');
+    hs.forEach(x => lines.push('     · ' + (HL_NAMES[x.c] || '标记') + '：' + x.t));
+  }
+  return lines.join('\n');
+}
+
+function qListStemText(list, title) {
+  return title + '（只有题目）\n\n' + list.map((q, i) => qStemOnly(q, i)).join('\n\n');
+}
+
+function qListExpText(list, title) {
+  const has = list.filter(q => (q.exp || '').trim()).length;
+  return title + '（只有解析 · ' + has + '/' + list.length + ' 题有解析）\n\n' + list.map((q, i) => qExpOnly(q, i)).join('\n\n');
+}
+
+function qListFullText(list, title) {
+  return title + '\n\n' + list.map((q, i) => qFullText(q, i)).join('\n\n');
+}
+
+function marksText(list, title) {
+  const blocks = [];
+  list.forEach((q, i) => {
+    const lines = qMarksLines(q);
+    if (!lines.length) return;
+    blocks.push((i + 1) + '. ' + String(q.q || '').replace(/\n/g, ' ') + '\n' + lines.map(x => '   · ' + x).join('\n'));
+  });
+  return title + '\n\n' + (blocks.join('\n\n') || '（这些题还没有标记过的知识点）');
+}
+
 function paperText(list, withExp) {
   return list.map((q, i) => {
     let out = (i + 1) + '. ' + q.q;
@@ -3152,6 +3298,7 @@ function saveEditorInner(m) {
     const f = findQ(ctx.qid);
     if (f) {
       const old = f.q;
+      if (old.q !== q.q) { old.marks = []; old.hl = []; }
       old.name = q.name || ''; old.type = q.type; old.q = q.q; old.options = q.options; old.answer = q.answer; old.exp = q.exp; old.hl = q.hl || [];
       old.images = q.images;
       saveDB();
@@ -3263,6 +3410,35 @@ document.addEventListener('click', e => {
       break;
     }
 
+    case 'qmenuEdit': {
+      const f = findQ(el.dataset.qid);
+      S.modal = null;
+      if (f) openEditQ(f.q, false, { kind: 'db', qid: f.q.id });
+      break;
+    }
+    case 'expQStem': {
+      const f = findQ(el.dataset.qid); S.modal = null;
+      if (!f) break;
+      download('题目_' + f.ch.name.replace(/\s+/g, '') + '_' + f.q.id.slice(0, 6) + '.txt', qStemOnly(f.q, 0));
+      render(); toast('已导出题目');
+      break;
+    }
+    case 'expQExp': {
+      const f = findQ(el.dataset.qid); S.modal = null;
+      if (!f) break;
+      const t = f.q.exp ? qExpOnly(f.q, 0) : '这道题还没有解析。';
+      if (!f.q.exp) { render(); toast('这道题还没有解析'); break; }
+      download('解析_' + f.ch.name.replace(/\s+/g, '') + '_' + f.q.id.slice(0, 6) + '.txt', t);
+      render(); toast('已导出解析');
+      break;
+    }
+    case 'expQAll': {
+      const f = findQ(el.dataset.qid); S.modal = null;
+      if (!f) break;
+      download('题目解析_' + f.ch.name.replace(/\s+/g, '') + '_' + f.q.id.slice(0, 6) + '.txt', qFullText(f.q));
+      render(); toast('已导出题目和解析');
+      break;
+    }
     case 'qmenuFav': { const qid = el.dataset.qid; S.modal = null; toggleFav(qid); break; }
     case 'qmenuDel': { const qid = el.dataset.qid; S.modal = null; removeQuestion(qid); break; }
     case 'manageCourses': S.view = 'manage'; render(); break;
@@ -3342,11 +3518,59 @@ document.addEventListener('click', e => {
     }
     case 'folderMenu': S.modal = { type: 'foldermenu', course: el.dataset.course, name: el.dataset.folder || '' }; render(); break;
     case 'newFolder': S.modal = { type: 'newFolder', courseId: el.dataset.course || S.courseId }; render(); break;
+    case 'exportQMarks': {
+      const f = findQ(el.dataset.qid);
+      if (!f) break;
+      S.modal = { type: 'exportQ', qid: f.q.id };
+      render();
+      break;
+    }
+    case 'exportChapterMarks': {
+      const f = getChapter(el.dataset.id);
+      if (!f) break;
+      const n = f.ch.questions.filter(q => qMarksLines(q).length).length;
+      if (!n) { toast('这一章还没有标记过的知识点'); break; }
+      download('标记知识点_' + f.ch.name + '_' + n + '题.txt', marksText(f.ch.questions, '标记知识点 · ' + f.ch.name + '（' + n + ' 题）'));
+      toast('已导出 ' + n + ' 题的知识点');
+      break;
+    }
+    case 'expFolderStem': case 'expFolderExp': case 'expFolderAll': {
+      const c = getCourse(el.dataset.course);
+      if (!c) break;
+      const folder = el.dataset.name || '';
+      const qs = c.chapters.filter(ch => (ch.folder || '') === folder).reduce((a, ch) => a.concat(ch.questions || []), []);
+      if (!qs.length) { S.modal = null; render(); toast('这个文件夹里还没有题'); break; }
+      const nm = folder || '未分组';
+      const head = c.name + ' › ' + nm;
+      const fn = nm.replace(/\s+/g, '');
+      S.modal = null;
+      if (el.dataset.act === 'expFolderStem') download('题目_' + fn + '_' + qs.length + '题.txt', qListStemText(qs, head));
+      else if (el.dataset.act === 'expFolderExp') download('解析_' + fn + '_' + qs.length + '题.txt', qListExpText(qs, head));
+      else download('题目解析_' + fn + '_' + qs.length + '题.txt', qListFullText(qs, head));
+      render(); toast('已导出 ' + qs.length + ' 题');
+      break;
+    }
+    case 'exportChStem': {
+      const f = getChapter(el.dataset.id);
+      if (!f) break;
+      if (!f.ch.questions.length) { toast('这一章还没有题目'); break; }
+      download('题目_' + f.ch.name.replace(/\s+/g, '') + '_' + f.ch.questions.length + '题.txt', qListStemText(f.ch.questions, f.c.name + ' › ' + f.ch.name));
+      toast('已导出 ' + f.ch.questions.length + ' 题（只有题目）');
+      break;
+    }
+    case 'exportChExp': {
+      const f = getChapter(el.dataset.id);
+      if (!f) break;
+      if (!f.ch.questions.length) { toast('这一章还没有题目'); break; }
+      download('解析_' + f.ch.name.replace(/\s+/g, '') + '_' + f.ch.questions.length + '题.txt', qListExpText(f.ch.questions, f.c.name + ' › ' + f.ch.name));
+      toast('已导出解析');
+      break;
+    }
     case 'exportChapter': {
       const f = getChapter(el.dataset.id);
       if (!f) break;
       if (!f.ch.questions.length) { toast('这个章节还没有题目'); break; }
-      download('章节_' + f.ch.name.replace(/\s+/g, '') + '_' + f.ch.questions.length + '题.txt', paperText(f.ch.questions, true));
+      download('章节_' + f.ch.name.replace(/\s+/g, '') + '_' + f.ch.questions.length + '题.txt', qListFullText(f.ch.questions, f.c.name + ' › ' + f.ch.name));
       toast('已导出 ' + f.ch.questions.length + ' 题');
       break;
     }
@@ -3554,7 +3778,18 @@ document.addEventListener('click', e => {
       if (!hlSel || hlSel.e <= hlSel.s) { toast('先用手指按住选中要标重点的文字'); break; }
       hlPush(m);
       m.q.hl = m.q.hl || [];
-      m.q.hl.push({ s: hlSel.s, e: Math.min(hlSel.e, m.q.exp.length), c: el.dataset.c || 'y' });
+      const c = el.dataset.c || 'y';
+      const ns = hlSel.s, ne = Math.min(hlSel.e, m.q.exp.length);
+      const glow = ['y', 'r', 'b'];
+      const conflict = (m.q.hl || []).some(h => {
+        const sameType = h.c === c || (glow.indexOf(h.c) > -1 && glow.indexOf(c) > -1);
+        return sameType && !(h.e <= ns || h.s >= ne);
+      });
+      if (conflict) {
+        toast(glow.indexOf(c) > -1 ? '这段已经有荧光标记了，先点掉旧的再标' : '这段已经标过同样的线了，先点掉旧的再标');
+        break;
+      }
+      m.q.hl.push({ s: ns, e: ne, c: c });
       refreshHLPreview();
       break;
     }
@@ -3657,16 +3892,25 @@ document.addEventListener('click', e => {
     case 'gateEnter': {
       const inp = $('#gateCode');
       const r = gateOK(inp ? inp.value : '');
-      if (!r) { toast('码不对，检查一下或联系饼干'); break; }
-      if (r.__fail) { toast(r.__fail.label === '已过期' ? '这个码已到期，想续请联系饼干' : (r.__fail.label === '未开始' ? '这个码还没到开始日期' : '这个码已停用，请联系饼干')); break; }
+      S.gateErr = r ? (r.__fail ? r.__fail.label : '') : '码不对';
+      if (!r || r.__fail) { render(); break; }
       const c = r;
       gateSave({ code: c.code, name: c.name || '', at: Date.now() });
+      S.gateErr = '';
       S.view = 'home'; S.modal = null; render();
       toast('欢迎，' + (c.name || '同学'));
       setTimeout(() => { if (S.view === 'home' && !S.modal && (!DB.profile.major || !DB.profile.grade)) { S.modal = { type: 'profile' }; render(); } }, 2600);
       break;
     }
     case 'gateAdmin': S.modal = { type: 'adminPw' }; render(); break;
+    case 'gateErrBack': S.gateErr = ''; render(); break;
+    case 'copyWx': {
+      const t = 'Dahexiangdongliule';
+      try { navigator.clipboard.writeText(t); } catch (e) {}
+      const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      ta.remove(); toast('微信号已复制：' + t); break;
+    }
     case 'gateBack': S.view = GATE.code ? 'home' : 'gate'; S.modal = null; render(); break;
     case 'gateToggle': {
       const code = el.dataset.code;
