@@ -1810,7 +1810,10 @@ function renderFeedback(q, P) {
   }
   const hit = P.picked && String(P.picked).split('').sort().join('') === String(q.answer).split('').sort().join('');
   if (P.correct === true) {
-    return `<div class="fb ok">✓ ${hit ? '回答正确' : '按你的改判算对'}<div class="fb-row">你选了 <b>${esc(P.picked || '')}</b></div></div>${q.exp ? `<div class="exp">${expHead}${expHTML(q.exp, q.hl)}</div>` : ''}`;
+    const wc = q.st.wrong || 0;
+    const wp = [...new Set(((q.st.picks) || []).filter(x => x.ok === false && x.k).map(x => x.k))];
+    const hist = wc ? `<div class="hist-line"><span>此前错 <b>${wc}</b> 次</span>${wp.length ? `<span class="hi">·</span><span>曾选 <b>${esc(wp.join('、'))}</b></span>` : ''}</div>` : '';
+    return `<div class="fb ok">✓ ${hit ? '回答正确' : '按你的改判算对'}<div class="fb-row">你选了 <b>${esc(P.picked || '')}</b></div></div>${hist}${q.exp ? `<div class="exp">${expHead}${expHTML(q.exp, q.hl)}</div>` : ''}`;
   }
   return `<div class="fb bad">
     <div class="fb-title">✕ ${!P.picked ? '这题不会' : hit ? '按你的改判算错' : '回答错误'}</div>
