@@ -1853,6 +1853,8 @@ function viewResult() {
   const blank = total - right - wrong;
   const pct = total ? Math.round(right / total * 100) : 0;
   const wrongItems = R ? R.wrongItems : [];
+  const hitHist = P ? P.list.map((q, i) => ({ q, i, a: (P.answers || []).filter(x => x.qi === i).pop() }))
+    .filter(x => x.a && x.a.correct === true && ((x.q.st || {}).wrong || 0) > 0) : [];
   return `
   <div class="topbar">
     <button class="icon-btn" data-act="exitResult">←</button>
@@ -1872,7 +1874,7 @@ function viewResult() {
   ${wrongItems.length ? `<div class="h2-sub">错题回顾 <span class="n">${wrongItems.length} 题</span></div>
   ${wrongItems.map((it, i) => {
     const q = it.q;
-    return `<details class="wq">
+    return `<details class="wq" open>
       <summary><span class="tag ${qClass(q)} qn">${qLabel(q)}</span><span>${esc(q.q)}</span></summary>
       <div class="wbody">
         ${q.type !== 'short' ? q.options.map(o => `<div>${q.answer.indexOf(o.k) > -1 ? '✔' : ((it.picked || '').indexOf(o.k) > -1 ? '✘' : '·')} ${o.k}. ${esc(o.t)}</div>`).join('') : ''}
@@ -1882,6 +1884,35 @@ function viewResult() {
       </div>
     </details>`;
   }).join('')}` : `<div class="empty" style="padding:24px 0"><h3>全对，漂亮。</h3><p>这次没有错题。</p></div>`}
+
+  ${(R && R.histRight && R.histRight.length) ? `<div class="h2-sub">本次答对 · 但曾错过 <span class="n">${R.histRight.length} 题</span></div>
+  ${R.histRight.map(it => {
+    const q = it.q, wc = q.st.wrong || 0;
+    const wp = [...new Set(((q.st.picks) || []).filter(x => x.ok === false && x.k).map(x => x.k))];
+    return `<details class="wq" open>
+      <summary><span class="tag ${qClass(q)} qn">${qLabel(q)}</span><span>${esc(q.q)}</span></summary>
+      <div class="wbody">
+        <div style="margin-top:4px"><i>本次你选：${esc(it.picked || '')} · 正确</i></div>
+        <div class="hist-line"><span>曾错 <b>${wc}</b> 次</span>${wp.length ? `<span class="hi">·</span><span>曾选 <b>${esc(wp.join('、'))}</b></span>` : ''}</div>
+        ${q.exp ? `<div class="exp" style="margin-top:8px"><span class="exp-label">解析</span>${expHTML(q.exp, q.hl)}</div>` : ''}
+      </div>
+    </details>`;
+  }).join('')}` : ''}
+
+  ${hitHist.length ? `<div class="h2-sub">本次答对 · 曾错过 <span class="n">${hitHist.length} 题</span></div>
+  ${hitHist.map(x => {
+    const q = x.q; const st = q.st || {}; const wc = st.wrong || 0;
+    const wp = [...new Set(((st.picks) || []).filter(o => o.ok === false && o.k).map(o => o.k))];
+    return `<details class="wq" open>
+      <summary><span class="tag ${qClass(q)} qn">${qLabel(q)}</span><span>${esc(q.q)}</span></summary>
+      <div class="wbody">
+        ${q.type !== 'short' ? q.options.map(o => `<div>${q.answer.indexOf(o.k) > -1 ? '✔' : ((x.a.picked || '').indexOf(o.k) > -1 ? '✘' : '·')} ${o.k}. ${esc(o.t)}</div>`).join('') : ''}
+        <div style="margin-top:7px"><i>本次你答：${esc(x.a.picked || '未答')} ｜ 正确：${esc(answerText(q))}</i></div>
+        <div class="hist-line"><span>错过 <b>${wc}</b> 次</span>${wp.length ? `<span class="hi">·</span><span>曾选 <b>${esc(wp.join('、'))}</b></span>` : ''}</div>
+        ${q.exp ? `<div class="exp" style="margin-top:8px"><span class="exp-label">${q.type === 'short' ? '参考答案' : '解析'}</span>${expHTML(q.exp, q.hl)}</div>` : ''}
+      </div>
+    </details>`;
+  }).join('')}` : ''}
 
   <div class="result-actions">
     <button class="btn primary" data-act="restart">再练一遍</button>
@@ -2623,7 +2654,10 @@ function finish() {
   const right = answers.filter(a => a.correct === true).length;
   const wrong = answers.filter(a => a.correct === false).length;
   const wrongItems = answers.filter(a => a.correct === false).map(a => ({ q: P.list[a.qi], picked: a.picked }));
-  S.result = { right, wrong, wrongItems };
+  const histRight = answers.filter(a => a.correct === true).map(a => ({ q: P.list[a.qi], picked: a.picked }))
+    .filter(it => it.q && ((it.q.st || {}).wrong || 0) > 0)
+    .filter((it, i, arr) => arr.findIndex(x => x.q.id === it.q.id) === i);
+  S.result = { right, wrong, wrongItems, histRight };
   const loc = P.chapterId ? getChapter(P.chapterId) : null;
   DB.logs.unshift({
     id: uid(), at: Date.now(), title: P.title,
